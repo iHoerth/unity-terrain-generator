@@ -1,0 +1,78 @@
+# =====================================
+# Unity .gitignore — por Nacho
+# =====================================
+
+# --- Carpetas generadas automáticamente ---
+[Ll]ibrary/
+[Tt]emp/
+[Bb]uild/
+[Bb]uilds/
+[Ll]ogs/
+[Oo]bj/
+[Mm]emoryCaptures/
+[Uu]serSettings/
+
+# --- Archivos generados por Visual Studio / JetBrains Rider ---
+.vs/
+.idea/
+*.sln
+*.user
+*.userprefs
+*.csproj
+*.pidb
+*.booproj
+*.svd
+
+# --- Archivos de Unity Cloud / Collaborate ---
+*.collabignore
+*.plastic/
+
+# --- Cache de lightmaps y GI ---
+[Ll]ightmapSnapshot/
+LightingData.asset
+*.lighting
+*.exr
+
+# --- Texturas temporales / Bake ---
+[Bb]akedLighting/
+[Bb]akedNavMesh/
+[Bb]aked/
+[Bb]akes/
+[Bb]undleCache/
+[Bb]uildReport/
+
+# --- Asset Store / Packages ---
+*.unitypackage
+/Packages/com.unity.package-manager/
+# (dejá “Packages/manifest.json” y “Packages/packages-lock.json”)
+
+# --- Crash y profiler data ---
+sysinfo.txt
+*.stacktrace
+*.dmp
+
+# --- Logs ---
+*.log
+*.tmp
+*.temp
+
+# --- Archivos del sistema operativo ---
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# --- Git LFS: activa solo si lo usás ---
+# (Descomentá las líneas que necesites)
+# *.png
+# *.jpg
+# *.tga
+# *.psd
+# *.fbx
+# *.blend
+# *.wav
+# *.mp4
+
+# --- Configs personales (dejá solo las globales) ---
+*.swp
+*.bak
+*.orig
