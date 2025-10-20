@@ -18,6 +18,11 @@ public class InputManager : MonoBehaviour
         look = GetComponent<PlayerLook>();
 
         playerActions.Jump.performed += ctx => motor.Jump();
+        playerActions.Crouch.performed += ctx => {
+            Debug.Log("Crouch pressed!");
+            motor.Crouch();
+        };
+        playerActions.Sprint.performed += ctx => motor.Sprint();
     }
 
     // Update is called once per frame/
