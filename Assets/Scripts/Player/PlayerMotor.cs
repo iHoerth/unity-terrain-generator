@@ -9,6 +9,7 @@ public class PlayerMotor : MonoBehaviour
     public float speed = 5f;
     public float walkSpeed = 5f;
     public float sprintSpeed = 8f;
+    public float crouchSpeed = 3f;
 
     private bool isGrounded;
     public float gravity = -9.8f;
@@ -95,5 +96,7 @@ public class PlayerMotor : MonoBehaviour
         crouching = !crouching;
         crouchTimer = 0f;
         lerpCrouch = true;
+
+        speed = crouching ? crouchSpeed : walkSpeed;
     }
 }
