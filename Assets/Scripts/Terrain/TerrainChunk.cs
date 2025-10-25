@@ -1,6 +1,7 @@
 
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 
 [RequireComponent(typeof(MeshFilter), typeof(MeshRenderer))]
@@ -25,7 +26,7 @@ public class TerrainChunk : MonoBehaviour
         List<Vector3> vertices =  new List<Vector3>();
         List<int> triangles = new List<int>();
         List<Vector2> uvs = new List<Vector2>();
-
+        
         // Mesh
         Mesh mesh = new Mesh();
         GetComponent<MeshFilter>().mesh = mesh;
@@ -78,7 +79,7 @@ public class TerrainChunk : MonoBehaviour
                     vertices.Add(new Vector3(x + 1, y + 1, z + 1)); // 111 v2
                     vertices.Add(new Vector3(x + 1, y + 1, z)); // 110 v3
 
-                    // Tris
+                    // Tris clockwise
                     triangles.Add(i); // v0
                     triangles.Add(i + 1); // v1
                     triangles.Add(i + 2); // v2
@@ -88,31 +89,32 @@ public class TerrainChunk : MonoBehaviour
 
                     // UVs
                     Block currentBlock = Block.blockData[currentType];
-                    Vector2[] faceUV = currentBlock.topUV.GetUV();
+                    Vector2[] faceUV = currentBlock.topUV.GetUVs();
                     uvs.AddRange(faceUV);
                 }
                 // Bottom Face
-                if(y == 0 || world[x, y - 1, z] == BlockType.Air)
+                if(y > 0 && world[x, y - 1, z] == BlockType.Air)
                 {
                     int i = vertices.Count; 
 
                     // Add ver
-                    vertices.Add(new Vector3(x, y, z)); // 000 v0
-                    vertices.Add(new Vector3(x + 1, y, z)); // 100 v3
-                    vertices.Add(new Vector3(x + 1, y, z + 1)); // 101 v2
-                    vertices.Add(new Vector3(x, y, z + 1)); // 001 v1
+                    vertices.Add(new Vector3(x, y, z + 1)); // 001 v0
+                    vertices.Add(new Vector3(x, y, z)); // 000 v1
+                    vertices.Add(new Vector3(x + 1, y, z)); // 100 v2
+                    vertices.Add(new Vector3(x + 1, y, z + 1)); // 101 v3
 
                     // Tris
                     triangles.Add(i); // v0
                     triangles.Add(i + 1); // v1
                     triangles.Add(i + 2); // v2
+
                     triangles.Add(i); // v0
                     triangles.Add(i + 2); // v2
                     triangles.Add(i + 3); // v3
 
                     // UVs
                     Block currentBlock = Block.blockData[currentType];
-                    Vector2[] faceUV = currentBlock.bottomUV.GetUV();
+                    Vector2[] faceUV = currentBlock.bottomUV.GetUVs();
                     uvs.AddRange(faceUV);
                 }
 
@@ -126,16 +128,17 @@ public class TerrainChunk : MonoBehaviour
                     vertices.Add(new Vector3(x + 1, y + 1, z + 1)); // 111
                     vertices.Add(new Vector3(x + 1, y, z + 1)); // 101
 
+                    // Tris clockwise
                     triangles.Add(i); // v0
-                    triangles.Add(i + 1); // v3 
+                    triangles.Add(i + 1); // v1
                     triangles.Add(i + 2); // v2
                     triangles.Add(i); // v0
                     triangles.Add(i + 2); // v2
-                    triangles.Add(i + 3); // v1
+                    triangles.Add(i + 3); // v3
 
                     // UVs
                     Block currentBlock = Block.blockData[currentType];
-                    Vector2[] faceUV = currentBlock.sideUV.GetUV();
+                    Vector2[] faceUV = currentBlock.sideUV.GetUVs();
                     uvs.AddRange(faceUV);
                 }
                 // Left Face (normal facing -x)
@@ -152,17 +155,18 @@ public class TerrainChunk : MonoBehaviour
                     triangles.Add(i); // v0
                     triangles.Add(i + 1); // v1
                     triangles.Add(i + 2); // v2
+                    
                     triangles.Add(i); // v0
                     triangles.Add(i + 2); // v2
                     triangles.Add(i + 3); // v3 
 
                     // UVs
                     Block currentBlock = Block.blockData[currentType];
-                    Vector2[] faceUV = currentBlock.sideUV.GetUV();
+                    Vector2[] faceUV = currentBlock.sideUV.GetUVs();
                     uvs.AddRange(faceUV);
                 }
 
-                // Front face z-
+                // Back face z-
                 if (world[x, y, z - 1] == BlockType.Air)
                 {
                     int i = vertices.Count; 
@@ -175,25 +179,27 @@ public class TerrainChunk : MonoBehaviour
                     triangles.Add(i); // v0
                     triangles.Add(i + 1); // v1
                     triangles.Add(i + 2); // v2
+
                     triangles.Add(i); // v0
                     triangles.Add(i + 2); // v2
                     triangles.Add(i + 3); // v3 
 
                     // UVs
                     Block currentBlock = Block.blockData[currentType];
-                    Vector2[] faceUV = currentBlock.sideUV.GetUV();
+                    Vector2[] faceUV = currentBlock.sideUV.GetUVs();
                     uvs.AddRange(faceUV);
 
                 }
-                // Back face z+
+                // Front face z+
                 if(world[x, y, z + 1] == BlockType.Air)
                 {
                     int i = vertices.Count; 
 
-                    vertices.Add(new Vector3(x, y, z + 1)); // 001
                     vertices.Add(new Vector3(x + 1, y, z + 1)); // 101
                     vertices.Add(new Vector3(x + 1, y + 1, z + 1)); // 111
                     vertices.Add(new Vector3(x, y + 1, z + 1)); // 011
+                    vertices.Add(new Vector3(x, y, z + 1)); // 001
+
                     // Tris
                     triangles.Add(i); // v0
                     triangles.Add(i + 1); // v1
@@ -204,12 +210,10 @@ public class TerrainChunk : MonoBehaviour
 
                     // UVs
                     Block currentBlock = Block.blockData[currentType];
-                    Vector2[] faceUV = currentBlock.sideUV.GetUV();
+                    Vector2[] faceUV = currentBlock.sideUV.GetUVs();
                     uvs.AddRange(faceUV);
                 }
-
             }
-
         }
 
         // Draw Mesh
@@ -218,6 +222,10 @@ public class TerrainChunk : MonoBehaviour
         mesh.uv = uvs.ToArray();
 
         mesh.RecalculateNormals();
+        mesh.RecalculateTangents();
+
+        mesh.RecalculateBounds();
         GetComponent<MeshCollider>().sharedMesh = mesh;
+        Debug.Log($"Vertices: {vertices.Count}, Triangles: {triangles.Count / 3}");
     }
 }

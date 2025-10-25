@@ -19,15 +19,15 @@ public class TileUV
         uvs = new Vector2[4]
         {
             new Vector2((x / atlasSize) + 0.001f, (y / atlasSize) + 0.001f),
-            new Vector2(((x + 1) / atlasSize) - 0.001f, (y / atlasSize) + 0.001f), // lower right vertex
-            new Vector2(((x + 1) / atlasSize) - 0.001f, ((y + 1) / atlasSize) - 0.001f), // upper right vertex
             new Vector2((x / atlasSize) + 0.001f, ((y + 1) / atlasSize) - 0.001f), // upper left vertex
+            new Vector2(((x + 1) / atlasSize) - 0.001f, ((y + 1) / atlasSize) - 0.001f), // upper right vertex
+            new Vector2(((x + 1) / atlasSize) - 0.001f, (y / atlasSize) + 0.001f), // lower right vertex
         };
 
     }
 
     // esto para obtener la lista de uvs a la hora de renderizar
-    public Vector2[] GetUV()
+    public Vector2[] GetUVs()
     {
         return uvs;
     }
