@@ -7,14 +7,12 @@ using UnityEngine;
 [RequireComponent(typeof(MeshFilter), typeof(MeshRenderer))]
 public class TerrainChunk : MonoBehaviour
 {
-
-    
     // World variables
     public const int chunkHeight = 64;
     public const int chunkWidth = 64;
-
     public Vector2Int chunkCoord;
     public WorldGenerator world;
+    Dictionary<Direction, Vector2Int> neighbours = new();
 
     // Noise variables
     public float noiseScale = 0.8f;
@@ -23,42 +21,61 @@ public class TerrainChunk : MonoBehaviour
     public int seed = 42;
     FastNoise noise = new FastNoise();
 
+    // Mesh variables
     List<Vector3> vertices =  new List<Vector3>();
     List<Vector2> uvs = new List<Vector2>();
     List<int> triangles = new List<int>();
 
-    public BlockType[,,] chunkBlocks = new BlockType[chunkWidth + 2, chunkHeight, chunkWidth + 2];
+    // Chunkdata Array
+    public BlockType[,,] chunkBlocks = new BlockType[chunkWidth, chunkHeight, chunkWidth];
 
     public enum FaceDirection {Top, Bottom, Right, Left, Front, Back};
+    public enum Direction {North, West, East, South};
 
     public static Dictionary<FaceDirection, Vector3[]> FaceVertexMap = new Dictionary<FaceDirection, Vector3[]>()
+
     {
        {FaceDirection.Top, new Vector3[]{new Vector3(0,1,0), new Vector3(0,1,1), new Vector3(1,1,1), new Vector3(1,1,0)}},
-        //010 011 111 110
        {FaceDirection.Bottom, new Vector3[]{new Vector3(0,0,1), new Vector3(0,0,0), new Vector3(1,0,0), new Vector3(1,0,1)}},
-        //001 000 100 101
        {FaceDirection.Right, new Vector3[]{new Vector3(1,0,0), new Vector3(1,1,0), new Vector3(1,1,1), new Vector3(1,0,1)}},
-        //100 110 111 101
        {FaceDirection.Left, new Vector3[]{new Vector3(0,0,1), new Vector3(0,1,1), new Vector3(0,1,0), new Vector3(0,0,0)}},
-        //001 011 010 000
        {FaceDirection.Front, new Vector3[]{new Vector3(1,0,1), new Vector3(1,1,1), new Vector3(0,1,1), new Vector3(0,0,1)}},
-        //101 111 011 001
        {FaceDirection.Back,  new Vector3[]{new Vector3(0,0,0), new Vector3(0,1,0), new Vector3(1,1,0), new Vector3(1,0,0)}}
     };
 
+    public void Start()
+    {
+        // Iterates neighbour dictionary
+        foreach (Direction dir in neighbours.Keys)
+        {
+            Vector2Int neighbourCoord = neighbours[dir];
+            // Tries to get neighbour chunk reference
+            if (world.chunks.TryGetValue(neighbourCoord, out TerrainChunk neighbour))
+                // Forces neighbour to "rebuild" mesh to clean duplicate faces. Will replace in the future with "rebuildBorder()"
+                neighbour.buildMesh();
+        }
+    }
+
+    // Initializes the chunks & neighbours global position variables
     public void Init(Vector2Int chunkCoord, WorldGenerator world)
     {
         this.chunkCoord = chunkCoord;
         this.world = world;
-    }
 
+        neighbours.Add(Direction.East, new Vector2Int(chunkCoord.x + 1, chunkCoord.y));
+        neighbours.Add(Direction.West, new Vector2Int(chunkCoord.x - 1, chunkCoord.y));
+        neighbours.Add(Direction.North, new Vector2Int(chunkCoord.x, chunkCoord.y + 1));
+        neighbours.Add(Direction.South, new Vector2Int(chunkCoord.x, chunkCoord.y - 1));
+     }
+
+    // Populates the chunkBlock 3D array with blocktypes
     public void populateChunk()
     {   
         int xOffset = chunkCoord.x * chunkWidth;
         int zOffset = chunkCoord.y * chunkWidth;
 
-        for(int x = 1; x < chunkWidth + 1; x++)
-        for(int z = 1; z < chunkWidth + 1; z++)
+        for(int x = 0; x < chunkWidth; x++)
+        for(int z = 0; z < chunkWidth; z++)
         for(int y = 0; y < chunkHeight; y++)
         {
             int xGlobal = x + xOffset;
@@ -72,6 +89,7 @@ public class TerrainChunk : MonoBehaviour
             float noiseValue = n * (chunkHeight - 1);
             int surfaceY = Mathf.FloorToInt(noiseValue);
             
+            // Assign block types depending on distance to the noise surface
             if (y <= surfaceY - 4)
                 chunkBlocks[x, y, z] = BlockType.Stone;
             else if(y < surfaceY)
@@ -83,26 +101,34 @@ public class TerrainChunk : MonoBehaviour
         }
     }
 
-    public bool checkNeighbourAir(Vector2Int coords, int x, int y , int z)
+    // Checks if neighbour has air in the border
+    public bool checkNeighbourAir(Vector2Int chunkCoords, Vector3Int currentPos)
     {
-        if(world.chunks.TryGetValue(coords, out TerrainChunk neighbour))
-        if(neighbour.chunkBlocks[x,y,z] == BlockType.Air)
+        int x = currentPos.x;
+        int y = currentPos.y;
+        int z = currentPos.z;
+
+        if(world.chunks.TryGetValue(chunkCoords, out TerrainChunk neighbour))
+        if(neighbour.chunkBlocks[x, y, z] == BlockType.Air)
             return true;
 
         return false;
     }   
 
     public void AddFace(FaceDirection face, Vector3Int basePos, Vector2Int chunkCoord, BlockType currentBlockType)
-    {
+    {   
+        // Gets world offset to obtain global coords
         int xOffset = chunkCoord.x * chunkWidth;
         int zOffset = chunkCoord.y * chunkWidth; 
 
+        // Get current index count in the veritces lsit
         int currentIndex = vertices.Count;
 
+        // Sum current vertex pos in chunk with face offset to obtain required vertices to draw current face
         foreach (Vector3 vertexPosition in FaceVertexMap[face])
             vertices.Add(basePos + vertexPosition + new Vector3(xOffset, 0, zOffset));
 
-        // Tris clockwise
+        // Add indices - clockwise
         triangles.Add(currentIndex); // v0
         triangles.Add(currentIndex + 1); // v1
         triangles.Add(currentIndex + 2); // v2
@@ -112,75 +138,122 @@ public class TerrainChunk : MonoBehaviour
 
         // UVs
         Block currentBlock = Block.blockData[currentBlockType];
-        Vector2[] faceUV = currentBlock.topUV.GetUVs();
+        Vector2[] faceUV;
+        
+        switch(face)
+        {
+            case FaceDirection.Top:
+                faceUV = currentBlock.topUV.GetUVs();
+                break;
+            case FaceDirection.Bottom:
+                faceUV = currentBlock.bottomUV.GetUVs();
+                break;
+            default:
+                faceUV = currentBlock.sideUV.GetUVs();
+                break;
+        } 
+
         uvs.AddRange(faceUV);
     }
-
+    
     public void buildMesh()
     {
         Mesh mesh = new Mesh();
 
-        // Neighbour Chunks coords
-        Vector2Int eastNeighbourCoords = new Vector2Int(chunkCoord.x + 1, chunkCoord.y);
-        Vector2Int westNeighbourCoords = new Vector2Int(chunkCoord.x - 1, chunkCoord.y);
-        Vector2Int northNeighbourCoords= new Vector2Int(chunkCoord.x, chunkCoord.y + 1);
-        Vector2Int southNeighbourCoords= new Vector2Int(chunkCoord.x, chunkCoord.y - 1);
-
         // Create Vertices, UVs & Triangles
-        for(int x = 1; x < chunkWidth + 1; x++)
-        for(int z = 1; z < chunkWidth + 1; z++)
+        for(int x = 0; x < chunkWidth; x++)
+        for(int z = 0; z < chunkWidth; z++)
         for(int y = 0; y < chunkHeight; y++)
         {   
-
             BlockType currentType = chunkBlocks[x, y, z];
+            Vector3Int currentPos = new Vector3Int(x, y, z);
+
             if(currentType != BlockType.Air)
             {
-                // Upper face (normal facing +y)
+                // Top face y+
                 if(y == chunkHeight - 1 || chunkBlocks[x, y + 1, z] == BlockType.Air)
                 {
-                    Vector3Int pos = new Vector3Int(x, y, z);
                     FaceDirection face = FaceDirection.Top;
-                    AddFace(face, pos, chunkCoord, currentType);
+                    AddFace(face, currentPos, chunkCoord, currentType);
                 }
 
-                // Bottom Face
+                // Bottom Face y-
                 if(y > 0 && chunkBlocks[x, y - 1, z] == BlockType.Air)
                 {
-                    Vector3Int pos = new Vector3Int(x, y, z);
                     FaceDirection face = FaceDirection.Bottom;
-                    AddFace(face, pos, chunkCoord, currentType);
+                    AddFace(face, currentPos, chunkCoord, currentType);
                 }
 
-                // Right Face x +
-                // if(x < chunkWidth || checkNeighbourAir(eastNeighbourCoords,0,y,z))
-                if(chunkBlocks[x + 1, y, z] == BlockType.Air)
+                // Right Face x+
+                if(x < chunkWidth - 1)
                 {
-                    Vector3Int pos = new Vector3Int(x, y, z);
-                    FaceDirection face = FaceDirection.Right;
-                    AddFace(face, pos, chunkCoord, currentType);
-                }
-                // Left Face (normal facing -x)
-                if (chunkBlocks[x - 1, y, z] == BlockType.Air)
-                {
-                    Vector3Int pos = new Vector3Int(x, y, z);
-                    FaceDirection face = FaceDirection.Left;
-                    AddFace(face, pos, chunkCoord, currentType);
+                    if(chunkBlocks[x + 1, y, z] == BlockType.Air)
+                    {
+                        FaceDirection face = FaceDirection.Right;
+                        AddFace(face, currentPos, chunkCoord, currentType);
+                    }
+                } else {
+                   Vector3Int border =  new Vector3Int(0, y, z);
+
+                   if(checkNeighbourAir(neighbours[Direction.East], border))
+                   {
+                        FaceDirection face = FaceDirection.Right;
+                        AddFace(face, currentPos, chunkCoord, currentType);
+                   }
                 }
 
-                // Back face z-
-                if (chunkBlocks[x, y, z - 1] == BlockType.Air)
+                // Left Face x-
+                if(x > 0)
                 {
-                    Vector3Int pos = new Vector3Int(x, y, z);
-                    FaceDirection face = FaceDirection.Back;
-                    AddFace(face, pos, chunkCoord, currentType);
+                    if (chunkBlocks[x - 1, y, z] == BlockType.Air)
+                    {
+                        FaceDirection face = FaceDirection.Left;
+                        AddFace(face, currentPos, chunkCoord, currentType);
+                    }
+                } else {
+                   Vector3Int border =  new Vector3Int(chunkWidth - 1, y, z);
+                   
+                   if(checkNeighbourAir(neighbours[Direction.West], border))
+                   {
+                        FaceDirection face = FaceDirection.Left;
+                        AddFace(face, currentPos, chunkCoord, currentType);
+                   }
                 }
 
-                // Front face z+
-                if(chunkBlocks[x, y, z + 1] == BlockType.Air)
+                // Front Face z+
+                if(z < chunkWidth - 1)
                 {
-                    Vector3Int pos = new Vector3Int(x, y, z);
-                    FaceDirection face = FaceDirection.Front;
-                    AddFace(face, pos, chunkCoord, currentType);
+                    if(chunkBlocks[x, y, z + 1] == BlockType.Air)
+                    {
+                        FaceDirection face = FaceDirection.Front;
+                        AddFace(face, currentPos, chunkCoord, currentType);
+                    }
+                } else {
+                   Vector3Int border =  new Vector3Int(x, y, 0);
+
+                   if(checkNeighbourAir(neighbours[Direction.North], border))
+                   {
+                        FaceDirection face = FaceDirection.Front;
+                        AddFace(face, currentPos, chunkCoord, currentType);
+                   }
+                }
+
+                // Back Face z-
+                if(z > 0)
+                {
+                    if (chunkBlocks[x, y, z - 1] == BlockType.Air)
+                    {
+                        FaceDirection face = FaceDirection.Back;
+                        AddFace(face, currentPos, chunkCoord, currentType);
+                    }
+                } else {
+                   Vector3Int border =  new Vector3Int(x, y, chunkWidth - 1);
+                   
+                   if(checkNeighbourAir(neighbours[Direction.South], border))
+                   {
+                        FaceDirection face = FaceDirection.Back;
+                        AddFace(face, currentPos, chunkCoord, currentType);
+                   }
                 }
             }
         }
