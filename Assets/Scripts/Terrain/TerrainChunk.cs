@@ -33,7 +33,6 @@ public class TerrainChunk : MonoBehaviour
     public enum Direction {North, West, East, South};
 
     public static Dictionary<FaceDirection, Vector3[]> FaceVertexMap = new Dictionary<FaceDirection, Vector3[]>()
-
     {
        {FaceDirection.Top, new Vector3[]{new Vector3(0,1,0), new Vector3(0,1,1), new Vector3(1,1,1), new Vector3(1,1,0)}},
        {FaceDirection.Bottom, new Vector3[]{new Vector3(0,0,1), new Vector3(0,0,0), new Vector3(1,0,0), new Vector3(1,0,1)}},
@@ -71,6 +70,7 @@ public class TerrainChunk : MonoBehaviour
     // Populates the chunkBlock 3D array with blocktypes
     public void populateChunk()
     {   
+        // Calculate the starting 2D coords of the chunk 
         int xOffset = chunkCoord.x * chunkWidth;
         int zOffset = chunkCoord.y * chunkWidth;
 
@@ -78,16 +78,19 @@ public class TerrainChunk : MonoBehaviour
         for(int z = 0; z < chunkWidth; z++)
         for(int y = 0; y < chunkHeight; y++)
         {
+            // Calculate global coords of the chunk
             int xGlobal = x + xOffset;
             int zGlobal = z + zOffset;
-            // float simplex1 = noise.GetSimplex(x * noiseScale, z * noiseScale) * noiseAmplitude;
-            // float simplex2 = noise.GetSimplex(x * 3f, z * 3f) * 10 * (noise.GetSimplex(x*.3f, z*.3f)+.5f);
-            // float noiseValue = simplex1 + simplex2 + 5;
 
             // Normalized noise
             float n = (noise.GetSimplex(xGlobal * noiseScale, zGlobal * noiseScale) + 1f) * 0.5f; // de [-1,1] → [0,1]
             float noiseValue = n * (chunkHeight - 1);
             int surfaceY = Mathf.FloorToInt(noiseValue);
+
+            // Old noise
+            // float simplex1 = noise.GetSimplex(x * noiseScale, z * noiseScale) * noiseAmplitude;
+            // float simplex2 = noise.GetSimplex(x * 3f, z * 3f) * 10 * (noise.GetSimplex(x*.3f, z*.3f)+.5f);
+            // float noiseValue = simplex1 + simplex2 + 5;
             
             // Assign block types depending on distance to the noise surface
             if (y <= surfaceY - 4)
@@ -101,7 +104,7 @@ public class TerrainChunk : MonoBehaviour
         }
     }
 
-    // Checks if neighbour has air in the border
+    // Checks if neighbour has air in the border at that position
     public bool checkNeighbourAir(Vector2Int chunkCoords, Vector3Int currentPos)
     {
         int x = currentPos.x;
@@ -185,6 +188,7 @@ public class TerrainChunk : MonoBehaviour
                 }
 
                 // Right Face x+
+                // Checks if current x is in the border or somewhere in the middle
                 if(x < chunkWidth - 1)
                 {
                     if(chunkBlocks[x + 1, y, z] == BlockType.Air)
@@ -193,8 +197,8 @@ public class TerrainChunk : MonoBehaviour
                         AddFace(face, currentPos, chunkCoord, currentType);
                     }
                 } else {
+                // Current X in the limit, so need to check for neighbour blocktype
                    Vector3Int border =  new Vector3Int(0, y, z);
-
                    if(checkNeighbourAir(neighbours[Direction.East], border))
                    {
                         FaceDirection face = FaceDirection.Right;
