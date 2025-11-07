@@ -104,7 +104,7 @@ public class TerrainChunk : MonoBehaviour
         }
     }
 
-    // Checks if neighbour has air in the border at that position
+    // Checks if neighbour chunk has air in the border at that position
     public bool checkNeighbourAir(Vector2Int chunkCoords, Vector3Int currentPos)
     {
         int x = currentPos.x;
@@ -159,6 +159,30 @@ public class TerrainChunk : MonoBehaviour
         uvs.AddRange(faceUV);
     }
     
+    private Vector3 globalToLocal(Vector3 globalPos)
+    {
+        Vector3 localPos;
+
+        int xOffset = chunkCoord.x * chunkWidth;
+        int zOffset = chunkCoord.y * chunkWidth; 
+
+        localPos.x = global.x - xOffset;
+        localPos.y = global.y;
+        localPos.z =  global.z - zOffset;
+
+        return localPos;
+    } 
+
+    public void ConvertBlock(Vector3 globalPos,BlockType newType)
+    {
+        Vector3 localPos = globalToLocal(globalPos);
+
+        if(localPos.y > 0)
+        {
+            chunkBlocks[localPos.x, localPos.y, localPos.z] = BlockType.Air
+        }
+    }
+
     public void buildMesh()
     {
         Mesh mesh = new Mesh();
