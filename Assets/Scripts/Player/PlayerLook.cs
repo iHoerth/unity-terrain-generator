@@ -3,19 +3,13 @@ using UnityEngine;
 public class PlayerLook : MonoBehaviour
 {   
     public Camera cam;
+    public RaycastHit hit;  
+
     private float xRotation = 0f;
 
     public float xSensitivity = 30f;
     public float ySensitivity = 30f;
 
-    public void Start()
-    {
-        // Cursor.lockState = CursorLockMode.Locked;
-        // Cursor.visible = false;
-
-        // // fuerza rotación limpia
-        // cam.transform.localRotation = Quaternion.identity;
-    }
     public void ProcessLook(Vector2 input) // we get the input from the InputManager
     {
 
@@ -33,5 +27,23 @@ public class PlayerLook : MonoBehaviour
         transform.Rotate(Vector3.up * (mouseX * Time.deltaTime) * xSensitivity);
     }
 
+    public void Aim()
+    {
+        Vector3 origin = cam.transform.position;
+        Vector3 direction = cam.transform.forward;
+        float maxDistance = 4f;
 
+        if(Physics.Raycast(origin, direction, out hit, maxDistance))
+        {
+            Debug.Log("Hitting something");
+            Debug.DrawRay(origin, direction * 10, Color.red);
+            target = hit.collider.gameObject;
+            // target.Destroy() esto destruiria el chunk entero!
+        }
+        else {
+            Debug.Log("Not hitting anything");
+            Debug.DrawRay(origin, direction * 10, Color.green);
+
+        }
+    }
 }

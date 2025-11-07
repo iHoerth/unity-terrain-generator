@@ -34,6 +34,7 @@ public class InputManager : MonoBehaviour
     void Update()
     {
         look.ProcessLook(playerActions.Look.ReadValue<Vector2>());
+        look.Aim();
     }
 
     private void OnEnable()
@@ -45,4 +46,6 @@ public class InputManager : MonoBehaviour
     {
         playerActions.Disable();
     }
+
+
 }
