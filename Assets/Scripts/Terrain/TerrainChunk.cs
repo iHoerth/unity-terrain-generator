@@ -12,7 +12,7 @@ public class TerrainChunk : MonoBehaviour
     public const int chunkWidth = 16;
     public Vector2Int chunkCoord;
     public WorldGenerator world;
-    Dictionary<Direction, Vector2Int> neighbours = new();
+    public Dictionary<Direction, Vector2Int> neighbours = new();
 
     // Noise variables
     public float noiseScale = 0.8f;
@@ -118,6 +118,17 @@ public class TerrainChunk : MonoBehaviour
         return false;
     }   
 
+    public bool isChunkLimit(Vector3Int globalPos)
+    {
+        Vector3Int localPos = GlobalToLocal(globalPos);
+
+        if(localPos.x == 0 || localPos.x == chunkWidth -1 || localPos.z == 0 || localPos.z == chunkWidth - 1)
+        {
+            return true;
+        }
+        return false;
+    }
+
     public void AddFace(FaceDirection face, Vector3Int basePos, Vector2Int chunkCoord, BlockType currentBlockType)
     {   
         // Gets world offset to obtain global coords
@@ -186,7 +197,7 @@ public class TerrainChunk : MonoBehaviour
     public void buildMesh()
     {
         Mesh mesh = new Mesh();
-        
+
         vertices.Clear();
         triangles.Clear();
         uvs.Clear();

@@ -38,5 +38,8 @@ public class WorldGenerator : MonoBehaviour
             newChunk.buildMesh();
 
         }
+
+        foreach (var kvp in chunks)
+            kvp.Value.Init(kvp.Key, this);
     }
 }
