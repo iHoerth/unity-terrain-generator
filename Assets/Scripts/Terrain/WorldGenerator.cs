@@ -5,7 +5,7 @@ public class WorldGenerator : MonoBehaviour
 {
     public TerrainChunk chunkPrefab;
 
-    private int chunkRadius = 5;
+    private int chunkRadius = 1;
 
     public Vector2Int chunkCoord = new Vector2Int(0,0);
 

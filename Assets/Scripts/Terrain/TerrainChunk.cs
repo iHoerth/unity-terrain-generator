@@ -8,8 +8,8 @@ using UnityEngine;
 public class TerrainChunk : MonoBehaviour
 {
     // World variables
-    public const int chunkHeight = 64;
-    public const int chunkWidth = 64;
+    public const int chunkHeight = 16;
+    public const int chunkWidth = 16;
     public Vector2Int chunkCoord;
     public WorldGenerator world;
     Dictionary<Direction, Vector2Int> neighbours = new();
@@ -159,33 +159,37 @@ public class TerrainChunk : MonoBehaviour
         uvs.AddRange(faceUV);
     }
     
-    private Vector3 globalToLocal(Vector3 globalPos)
+    public Vector3Int GlobalToLocal(Vector3Int globalPos)
     {
-        Vector3 localPos;
+        Vector3Int localPos = new Vector3Int();
 
         int xOffset = chunkCoord.x * chunkWidth;
         int zOffset = chunkCoord.y * chunkWidth; 
 
-        localPos.x = global.x - xOffset;
-        localPos.y = global.y;
-        localPos.z =  global.z - zOffset;
+        localPos.x = globalPos.x - xOffset;
+        localPos.y = globalPos.y;
+        localPos.z =  globalPos.z - zOffset;
 
         return localPos;
     } 
 
-    public void ConvertBlock(Vector3 globalPos,BlockType newType)
+    public void ConvertBlock(Vector3Int globalPos, BlockType newType)
     {
-        Vector3 localPos = globalToLocal(globalPos);
+        Vector3Int localPos = GlobalToLocal(globalPos);
 
         if(localPos.y > 0)
         {
-            chunkBlocks[localPos.x, localPos.y, localPos.z] = BlockType.Air
+            chunkBlocks[localPos.x, localPos.y , localPos.z] = newType;
         }
     }
 
     public void buildMesh()
     {
         Mesh mesh = new Mesh();
+        
+        vertices.Clear();
+        triangles.Clear();
+        uvs.Clear();
 
         // Create Vertices, UVs & Triangles
         for(int x = 0; x < chunkWidth; x++)
@@ -287,6 +291,7 @@ public class TerrainChunk : MonoBehaviour
         }
 
         // Draw Mesh
+        mesh.Clear();
         mesh.vertices = vertices.ToArray();
         mesh.triangles = triangles.ToArray();
         mesh.uv = uvs.ToArray();

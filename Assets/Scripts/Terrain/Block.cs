@@ -18,7 +18,7 @@ public class Block
         this.side = tileType;
         this.bottom = tileType;
 
-        // UV Coords => TileUV is dictionary to look up that tileType (key) to retrieve its UV coord in the atlas (value)
+        // UV Coords => uvLookup is dictionary to look up that tileType (key) to retrieve its UV coord in the atlas (value)
         this.topUV = TileUV.uvLookup[top];
         this.sideUV = TileUV.uvLookup[side];
         this.bottomUV = TileUV.uvLookup[bottom];
@@ -32,7 +32,7 @@ public class Block
         this.side = tileTypeSide;
         this.bottom = tileTypeBottom;
 
-        // UV Coords => TileUV is dictionary to look up that tileType (key) to retrieve its UV coord in the atlas (value)
+        // UV Coords => uvLookup is dictionary to look up that tileType (key) to retrieve its UV coord in the atlas (value)
         this.topUV = TileUV.uvLookup[top];
         this.sideUV = TileUV.uvLookup[side];
         this.bottomUV = TileUV.uvLookup[bottom];

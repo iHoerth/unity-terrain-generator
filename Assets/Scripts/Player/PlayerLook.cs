@@ -10,6 +10,12 @@ public class PlayerLook : MonoBehaviour
     public float xSensitivity = 30f;
     public float ySensitivity = 30f;
 
+    void Start()
+    {
+        Cursor.lockState = CursorLockMode.Locked;
+        Cursor.visible = false;
+    }
+
     public void ProcessLook(Vector2 input) // we get the input from the InputManager
     {
 
@@ -29,21 +35,51 @@ public class PlayerLook : MonoBehaviour
 
     public void Aim()
     {
-        Vector3 origin = cam.transform.position;
+        Vector3 origin = cam.transform.position + cam.transform.forward * 0.1f;
         Vector3 direction = cam.transform.forward;
-        float maxDistance = 4f;
+        float maxDistance = 3f;
 
         if(Physics.Raycast(origin, direction, out hit, maxDistance))
         {
-            Debug.Log("Hitting something");
-            Debug.DrawRay(origin, direction * 10, Color.red);
-            target = hit.collider.gameObject;
-            // target.Destroy() esto destruiria el chunk entero!
+            Debug.DrawRay(origin, direction, Color.red);
+            // target = hit.collider.gameObject;
         }
         else {
-            Debug.Log("Not hitting anything");
-            Debug.DrawRay(origin, direction * 10, Color.green);
+            Debug.DrawRay(origin, direction, Color.green);
+        }
+    }
+
+    public void Attack()
+    {
+        Vector3Int hitGlobalPos = Vector3Int.FloorToInt(hit.point - hit.normal * 0.5f);
+
+        BlockType newType = BlockType.Air;
+
+        GameObject target = hit.collider.gameObject;
+        if (target.TryGetComponent<TerrainChunk>(out TerrainChunk chunk))
+        {
+            Vector3Int hitLocalPos = chunk.GlobalToLocal(hitGlobalPos);
+
+            // chunk.GlobalToLocal(globalPos);
+            Debug.Log(chunk.chunkBlocks[hitLocalPos.x, hitLocalPos.y, hitLocalPos.z]);
+
+            chunk.ConvertBlock(hitGlobalPos, newType);
+            chunk.buildMesh();
+
+            Debug.Log(chunk.chunkBlocks[hitLocalPos.x, hitLocalPos.y, hitLocalPos.z]);
+
+            Debug.Log("BLOQUE DESTRUIDO!");
+            Debug.Log(hitGlobalPos);
+            Debug.Log(chunk.GlobalToLocal(hitGlobalPos));
 
         }
+    }
+
+    public void Build(BlockType newBlock)
+    {   
+        // obtener refe del chunk q estoy mirando
+        // ConverType del bloque qe estoy mirando pero y+1 al newBlock type.
+        // buildMesh 
+        // UpdateInventory en un futuro o algo asi
     }
 }

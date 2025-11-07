@@ -23,6 +23,7 @@ public class InputManager : MonoBehaviour
             motor.Crouch();
         };
         playerActions.Sprint.performed += ctx => motor.Sprint();
+        playerActions.Attack.performed += ctx => look.Attack();
     }
 
     // Update is called once per frame/
