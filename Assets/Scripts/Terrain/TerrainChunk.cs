@@ -123,7 +123,18 @@ public class TerrainChunk : MonoBehaviour
 
         return false;
     }   
-    // Checks if given globalPos is inside chunk boundaries x,z e [0,15]
+
+    public bool isChunkLimit(Vector3Int globalPos)
+    {
+        Vector3Int localPos = GlobalToLocal(globalPos);
+
+        if(localPos.x == 0 || localPos.x == chunkWidth -1 || localPos.z == 0 || localPos.z == chunkWidth - 1)
+        {
+            return true;
+        }
+        return false;
+    }
+
     public bool InsideChunk(Vector3Int globalPos)
     {
         Vector3Int localPos = GlobalToLocal(globalPos);
