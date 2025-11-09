@@ -57,12 +57,20 @@ public class TerrainChunk : MonoBehaviour
                 neighbour.buildMesh();
         }
     }
-
+    public void ClearData()
+    {
+        neighbours.Clear();
+        vertices.Clear();
+        uvs.Clear();
+        triangles.Clear();
+        chunkBlocks = new BlockType[chunkWidth, chunkHeight, chunkWidth];
+    }
     // Initializes the chunks & neighbours global position variables
     public void Init(Vector2Int chunkCoord, WorldGenerator world)
     {
         this.chunkCoord = chunkCoord;
         this.world = world;
+        neighbours.Clear();
 
         neighbours.Add(Direction.East, new Vector2Int(chunkCoord.x + 1, chunkCoord.y));
         neighbours.Add(Direction.West, new Vector2Int(chunkCoord.x - 1, chunkCoord.y));
@@ -75,7 +83,7 @@ public class TerrainChunk : MonoBehaviour
     // Populates the chunkBlock 3D array with blocktypes
     public void populateChunk()
     {   
-        // Calculate the starting 2D coords of the chunk 
+        // Calculate the chunk offset 
         int xOffset = chunkCoord.x * chunkWidth;
         int zOffset = chunkCoord.y * chunkWidth;
 
@@ -91,7 +99,7 @@ public class TerrainChunk : MonoBehaviour
             float n = (noise.GetSimplex(xGlobal * noiseScale, zGlobal * noiseScale) + 1f) * 0.5f; // de [-1,1] → [0,1]
             float noiseValue = n * (chunkHeight/4 - 1);
             
-            int surfaceY = Mathf.FloorToInt(n);
+            int surfaceY = Mathf.FloorToInt(noiseValue);
 
             // Old noise
             // float simplex1 = noise.GetSimplex(x * noiseScale, z * noiseScale) * noiseAmplitude;
@@ -134,7 +142,7 @@ public class TerrainChunk : MonoBehaviour
         }
         return false;
     }
-    
+
     // Checks if the given global pos is outside the chunk local coords.
     public bool InsideChunk(Vector3Int globalPos)
     {
