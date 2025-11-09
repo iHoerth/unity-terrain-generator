@@ -4,11 +4,14 @@ public class PlayerLook : MonoBehaviour
 {   
     public Camera cam;
     public RaycastHit hit;  
-    
-    private float xRotation = 0f;
 
+    // Input variables
+    private float xRotation = 0f;
     public float xSensitivity = 30f;
     public float ySensitivity = 30f;
+
+    // hit Getter
+    public RaycastHit CurrentHit => hit;
 
     void Start()
     {
@@ -20,10 +23,11 @@ public class PlayerLook : MonoBehaviour
     {
         float mouseX = input.x;
         float mouseY = input.y;
+        float maxRotationX = 90;
 
         // calculate camera rotation for looking up and down
         xRotation -= (mouseY * Time.deltaTime) * ySensitivity;
-        xRotation = Mathf.Clamp(xRotation, -80, 80);
+        xRotation = Mathf.Clamp(xRotation, -maxRotationX, maxRotationX);
 
         //apply to our cam transform
         cam.transform.localRotation = Quaternion.Euler(xRotation, 0, 0);
@@ -51,7 +55,7 @@ public class PlayerLook : MonoBehaviour
     public void Attack()
     {
         if (hit.collider == null) return;
-
+        // Position of the Raycast hit (minus normal) to be "inside" the cube and ensure being in the correct cube 
         Vector3Int hitGlobalPos = Vector3Int.FloorToInt(hit.point - hit.normal * 0.5f);
 
         BlockType newType = BlockType.Air;
@@ -75,11 +79,40 @@ public class PlayerLook : MonoBehaviour
         }
     }
 
-    public void Build(BlockType newBlock)
-    {   
-        // obtener refe del chunk q estoy mirando
-        // ConvertType (newBlock type) del bloque qe estoy mirando pero con y+1 
-        // buildMesh 
-        // UpdateInventory en un futuro o algo asi
+    public void Build(BlockType newBlock = BlockType.Dirt)
+    {  
+        // Return when Raycast pointing null to avoid error 
+        if (hit.collider == null) return;
+        // Position of the Raycast hit (plus normal) to be "outside" the cube in the direction of the face i am currently looking 
+        Vector3Int hitGlobalPos = Vector3Int.FloorToInt(hit.point + hit.normal * 0.5f);
+        GameObject target = hit.collider.gameObject;
+
+        // Get hit chunk reference if possible
+        if (target.TryGetComponent<TerrainChunk>(out TerrainChunk chunk))
+        {   
+            if(chunk.InsideChunk(hitGlobalPos))
+            {
+                // Convert block and build entire mesh
+                chunk.ConvertBlock(hitGlobalPos, newBlock);
+                chunk.buildMesh();
+            }
+            
+            else 
+            {
+                // Versor normal and reduce it to R2 (x,z)
+                Vector2Int fixedNormal = new Vector2Int(Mathf.RoundToInt(hit.normal.x), Mathf.RoundToInt(hit.normal.z));
+                // Obtain neighbour coords based on the normal and current chunk coords.
+                Vector2Int neighbourCoords = chunk.chunkCoord + fixedNormal;
+                // Neighbour chunk should exist because the player executes the build function and chunks render around player
+                TerrainChunk neighbourChunk = chunk.world.chunks[neighbourCoords];
+
+                // Convert block and build entire mesh
+                neighbourChunk.ConvertBlock(hitGlobalPos, newBlock);
+                neighbourChunk.buildMesh();
+
+                // Rebuild neighbour to avoid duplicate in-faces.
+                chunk.buildMesh(); 
+            }
+        }
     }
 }

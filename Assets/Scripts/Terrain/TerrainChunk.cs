@@ -4,11 +4,14 @@ using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
 
+// Debug
+using TMPro;
+
 [RequireComponent(typeof(MeshFilter), typeof(MeshRenderer))]
 public class TerrainChunk : MonoBehaviour
 {
     // World variables
-    public const int chunkHeight = 16;
+    public const int chunkHeight = 128;
     public const int chunkWidth = 16;
     public Vector2Int chunkCoord;
     public WorldGenerator world;
@@ -65,6 +68,8 @@ public class TerrainChunk : MonoBehaviour
         neighbours.Add(Direction.West, new Vector2Int(chunkCoord.x - 1, chunkCoord.y));
         neighbours.Add(Direction.North, new Vector2Int(chunkCoord.x, chunkCoord.y + 1));
         neighbours.Add(Direction.South, new Vector2Int(chunkCoord.x, chunkCoord.y - 1));
+
+        Debug.Log(chunkCoord);
      }
 
     // Populates the chunkBlock 3D array with blocktypes
@@ -84,8 +89,9 @@ public class TerrainChunk : MonoBehaviour
 
             // Normalized noise
             float n = (noise.GetSimplex(xGlobal * noiseScale, zGlobal * noiseScale) + 1f) * 0.5f; // de [-1,1] → [0,1]
-            float noiseValue = n * (chunkHeight - 1);
-            int surfaceY = Mathf.FloorToInt(noiseValue);
+            float noiseValue = n * (chunkHeight/4 - 1);
+            
+            int surfaceY = Mathf.FloorToInt(n);
 
             // Old noise
             // float simplex1 = noise.GetSimplex(x * noiseScale, z * noiseScale) * noiseAmplitude;
@@ -117,16 +123,24 @@ public class TerrainChunk : MonoBehaviour
 
         return false;
     }   
-
-    public bool isChunkLimit(Vector3Int globalPos)
+    // Checks if given globalPos is inside chunk boundaries x,z e [0,15]
+    public bool InsideChunk(Vector3Int globalPos)
     {
         Vector3Int localPos = GlobalToLocal(globalPos);
 
-        if(localPos.x == 0 || localPos.x == chunkWidth -1 || localPos.z == 0 || localPos.z == chunkWidth - 1)
+        if(localPos.x < 0 || localPos.x > chunkWidth -1)     
         {
-            return true;
-        }
-        return false;
+            // Debug.Log("localPos.x Outside:" + localPos.x);
+            return false;
+        }   
+
+        if(localPos.z < 0 || localPos.z > chunkWidth -1)     
+        {
+            // Debug.Log("localPos.z Outside:" + localPos.z);
+            return false;
+        } 
+
+        return true;
     }
 
     public void AddFace(FaceDirection face, Vector3Int basePos, Vector2Int chunkCoord, BlockType currentBlockType)
@@ -179,7 +193,7 @@ public class TerrainChunk : MonoBehaviour
 
         localPos.x = globalPos.x - xOffset;
         localPos.y = globalPos.y;
-        localPos.z =  globalPos.z - zOffset;
+        localPos.z = globalPos.z - zOffset;
 
         return localPos;
     } 
@@ -195,7 +209,8 @@ public class TerrainChunk : MonoBehaviour
     }
 
     public void buildMesh()
-    {
+    {   
+        
         Mesh mesh = new Mesh();
 
         vertices.Clear();
