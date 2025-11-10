@@ -6,10 +6,13 @@ public class WorldGenerator : MonoBehaviour
 {
     public TerrainChunk chunkPrefab;
     public PlayerMotor playerController;
-    private int chunkRadius = 3;
+    // private int chunkRadius = 3;
 
-    public Vector3Int playerCurrentChunkPos;
-    public Vector3Int playerLastChunkPos;
+    private int innerRadius = 5;
+    private int outerRadius = 12;
+
+    public Vector2Int playerCurrentChunkPos;
+    public Vector2Int playerLastChunkPos;
 
 
     public Vector2Int chunkCoord = new Vector2Int(0,0);
@@ -19,9 +22,8 @@ public class WorldGenerator : MonoBehaviour
 
     void Start()
     {
-        Vector3Int playerChunkPos = new Vector3Int(
+        Vector2Int playerChunkPos = new Vector2Int(
             Mathf.FloorToInt(playerController.transform.position.x / 16),
-            Mathf.FloorToInt(playerController.transform.position.y),
             Mathf.FloorToInt(playerController.transform.position.z / 16)
         );
 
@@ -34,33 +36,33 @@ public class WorldGenerator : MonoBehaviour
 
     void Update()
     {
-        this.playerCurrentChunkPos = new Vector3Int(
+        this.playerCurrentChunkPos = new Vector2Int(
             Mathf.FloorToInt(playerController.transform.position.x / 16),
-            Mathf.FloorToInt(playerController.transform.position.y),
             Mathf.FloorToInt(playerController.transform.position.z / 16)
         );
 
-        if(playerCurrentChunkPos != playerLastChunkPos)
+        float distance = Vector2.Distance(playerLastChunkPos, playerCurrentChunkPos);
+
+        if(distance >= (outerRadius - innerRadius))
         {
             playerLastChunkPos = playerCurrentChunkPos;
-            RefreshWorld();
+            RefreshWorld();            
         }
     }
 
     public void generateWorld()
     {   
         // Get current player position in world and conver to chunk coordinates
-        Vector3Int playerChunkPos = new Vector3Int(
+        Vector2Int playerChunkPos = new Vector2Int(
             Mathf.FloorToInt(playerController.transform.position.x / 16),
-            Mathf.FloorToInt(playerController.transform.position.y),
             Mathf.FloorToInt(playerController.transform.position.z / 16)
         );
 
         this.playerCurrentChunkPos = playerChunkPos;
 
         // Itarate through all chunks in radius
-        for(int x = playerChunkPos.x - chunkRadius; x <= playerChunkPos.x + chunkRadius; x++)
-        for(int z = playerChunkPos.z - chunkRadius; z <= playerChunkPos.z + chunkRadius; z++)
+        for(int x = playerChunkPos.x - outerRadius; x <= playerChunkPos.x + outerRadius; x++)
+        for(int z = playerChunkPos.y - outerRadius; z <= playerChunkPos.y + outerRadius; z++)
         {   
             chunkCoord = new Vector2Int(x, z);
 
@@ -82,9 +84,8 @@ public class WorldGenerator : MonoBehaviour
     public void RefreshWorld()
     {   
         // Get current player position in world and conver to chunk coordinates
-        Vector3Int playerChunkPos = new Vector3Int(
+        Vector2Int playerChunkPos = new Vector2Int(
         Mathf.FloorToInt(playerController.transform.position.x / 16),
-        Mathf.FloorToInt(playerController.transform.position.y),
         Mathf.FloorToInt(playerController.transform.position.z / 16)
         );
 
@@ -97,11 +98,12 @@ public class WorldGenerator : MonoBehaviour
         foreach (Vector2Int pos in chunks.Keys.ToList())
         {   
             // Four possible scenarios
-            bool a = pos.x < (playerChunkPos.x - chunkRadius);
-            bool b = pos.x > (playerChunkPos.x + chunkRadius);
-            bool c = pos.y < (playerChunkPos.z - chunkRadius);
-            bool d = pos.y > (playerChunkPos.z + chunkRadius);
+            bool a = pos.x < (playerChunkPos.x - outerRadius);
+            bool b = pos.x > (playerChunkPos.x + outerRadius);
+            bool c = pos.y < (playerChunkPos.y - outerRadius);
+            bool d = pos.y > (playerChunkPos.y + outerRadius);
 
+            // bool a2 = true;
             if(a || b || c || d)
                 toRemove.Add(pos);
         }
@@ -115,8 +117,8 @@ public class WorldGenerator : MonoBehaviour
         }
 
         // Itarate through all chunks in radius
-        for(int x = playerChunkPos.x - chunkRadius; x <= playerChunkPos.x + chunkRadius; x++)
-        for(int z = playerChunkPos.z - chunkRadius; z <= playerChunkPos.z + chunkRadius; z++)
+        for(int x = playerChunkPos.x - outerRadius; x <= playerChunkPos.x + outerRadius; x++)
+        for(int z = playerChunkPos.y - outerRadius; z <= playerChunkPos.y + outerRadius; z++)
         {   
             chunkCoord = new Vector2Int(x, z);
 
