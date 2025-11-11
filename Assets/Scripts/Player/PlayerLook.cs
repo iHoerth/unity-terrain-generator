@@ -72,8 +72,8 @@ public class PlayerLook : MonoBehaviour
             {
                 foreach (Vector2Int chord in chunk.neighbours.Values)
                 {
-                    if (chunk.world.chunks.ContainsKey(chord))
-                        chunk.world.chunks[chord].buildMesh();
+                    if (chunk.world.activeChunks.ContainsKey(chord))
+                        chunk.world.activeChunks[chord].buildMesh();
                 }
             }
         }
@@ -103,8 +103,8 @@ public class PlayerLook : MonoBehaviour
                 Vector2Int fixedNormal = new Vector2Int(Mathf.RoundToInt(hit.normal.x), Mathf.RoundToInt(hit.normal.z));
                 // Obtain neighbour coords based on the normal and current chunk coords.
                 Vector2Int neighbourCoords = chunk.chunkCoord + fixedNormal;
-                // Neighbour chunk should exist because the player executes the build function and chunks render around player
-                TerrainChunk neighbourChunk = chunk.world.chunks[neighbourCoords];
+                // Neighbour chunk should exist because the player executes the build function and activeChunks render around player
+                TerrainChunk neighbourChunk = chunk.world.activeChunks[neighbourCoords];
 
                 // Convert block and build entire mesh
                 neighbourChunk.ConvertBlock(hitGlobalPos, newBlock);

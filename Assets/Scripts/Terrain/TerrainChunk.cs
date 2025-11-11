@@ -15,7 +15,9 @@ public class TerrainChunk : MonoBehaviour
     public const int chunkWidth = 16;
     public Vector2Int chunkCoord;
     public WorldGenerator world;
+
     public Dictionary<Direction, Vector2Int> neighbours = new();
+    public Dictionary<Vector3Int, BlockType> blockData = new();
 
     // Noise variables
     public float noiseScale = 0.8f;
@@ -52,7 +54,7 @@ public class TerrainChunk : MonoBehaviour
         {
             Vector2Int neighbourCoord = neighbours[dir];
             // Tries to get neighbour chunk reference
-            if (world.chunks.TryGetValue(neighbourCoord, out TerrainChunk neighbour))
+            if (world.activeChunks.TryGetValue(neighbourCoord, out TerrainChunk neighbour))
                 // Forces neighbour to "rebuild" mesh to clean duplicate faces. Will replace in the future with "rebuildBorder()"
                 neighbour.buildMesh();
         }
@@ -65,7 +67,7 @@ public class TerrainChunk : MonoBehaviour
         triangles.Clear();
         chunkBlocks = new BlockType[chunkWidth, chunkHeight, chunkWidth];
     }
-    // Initializes the chunks & neighbours global position variables
+    // Initializes the activeChunks & neighbours global position variables
     public void Init(Vector2Int chunkCoord, WorldGenerator world)
     {
         this.chunkCoord = chunkCoord;
@@ -114,8 +116,11 @@ public class TerrainChunk : MonoBehaviour
                     chunkBlocks[x, y, z] = BlockType.Grass;
                 else
                     chunkBlocks[x, y, z] = BlockType.Air;
+
             }
         }
+
+
     }
 
     // Checks if neighbour chunk has air in the border at that position
@@ -125,7 +130,7 @@ public class TerrainChunk : MonoBehaviour
         int y = currentPos.y;
         int z = currentPos.z;
 
-        if(world.chunks.TryGetValue(chunkCoords, out TerrainChunk neighbour))
+        if(world.activeChunks.TryGetValue(chunkCoords, out TerrainChunk neighbour))
         if(neighbour.chunkBlocks[x, y, z] == BlockType.Air)
             return true;
 

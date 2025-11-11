@@ -21,7 +21,8 @@ public class WorldGenerator : MonoBehaviour
     public Queue<TerrainChunk> inactiveChunks = new Queue<TerrainChunk>();
     public Queue<TerrainChunk> ReadyToRender = new Queue<TerrainChunk>();
 
-    public Dictionary<Vector2Int, TerrainChunk> chunks = new Dictionary<Vector2Int, TerrainChunk>();
+    public Dictionary<Vector2Int, TerrainChunk> activeChunks = new Dictionary<Vector2Int, TerrainChunk>();
+    public Dictionary<Vector2Int, BlockType[,,]> WorldData = new Dictionary<Vector2Int, BlockType[,,]>();
 
     void Awake()
     {
@@ -60,7 +61,21 @@ public class WorldGenerator : MonoBehaviour
         while(ReadyToRender.Count > 0)
         {
             TerrainChunk newChunk = ReadyToRender.Dequeue();
-            newChunk.populateChunk();
+            Vector2Int pos = newChunk.chunkCoord;
+            
+            // si ya existe en world data, no lo quiero popular, quiero copiarle la data
+            if(WorldData.ContainsKey(pos))
+            {
+                activeChunks[pos].chunkBlocks = WorldData[pos];
+            }
+
+            // si no existe en world data, lo quiero popular y guardar esa info en world data
+            else
+            {
+                activeChunks[pos].populateChunk();
+                WorldData[pos] = activeChunks[pos].chunkBlocks;
+            }
+
             newChunk.buildMesh();
             yield return null;
         }
@@ -76,11 +91,11 @@ public class WorldGenerator : MonoBehaviour
 
         this.playerCurrentChunkPos = playerChunkPos;
 
-        // Auxiliar list to remove chunks from chunks dict
+        // Auxiliar list to remove activeChunks from activeChunks dict
         List<Vector2Int> toRemove = new List<Vector2Int>();
 
-        // Check if existing chunks are outside of correct radius and add to "toRemove" list
-        foreach (Vector2Int pos in chunks.Keys.ToList())
+        // Check if existing activeChunks are outside of correct radius and add to "toRemove" list
+        foreach (Vector2Int pos in activeChunks.Keys.ToList())
         {   
             // Four possible scenarios
             bool a = pos.x < (playerChunkPos.x - outerRadius);
@@ -93,22 +108,22 @@ public class WorldGenerator : MonoBehaviour
                 toRemove.Add(pos);
         }
 
-        // Remove, derender and enqueue chunks
+        // Remove, derender and enqueue activeChunks
         foreach (Vector2Int pos in toRemove)
         {
-            chunks[pos].gameObject.SetActive(false);
-            inactiveChunks.Enqueue(chunks[pos]);
-            chunks.Remove(pos);
+            activeChunks[pos].gameObject.SetActive(false);
+            inactiveChunks.Enqueue(activeChunks[pos]);
+            activeChunks.Remove(pos);
         }
 
-        // Itarate through all chunks in radius
+        // Itarate through all activeChunks in radius
         for(int x = playerChunkPos.x - outerRadius; x <= playerChunkPos.x + outerRadius; x++)
         for(int z = playerChunkPos.y - outerRadius; z <= playerChunkPos.y + outerRadius; z++)
         {   
             chunkCoord = new Vector2Int(x, z);
 
-            // If currently NOT in chunks dictionary, need to get one from pool (or create one if pool is empty)
-            if(!chunks.ContainsKey(chunkCoord))
+            // If currently NOT in activeChunks dictionary, need to get one from pool (or create one if pool is empty)
+            if(!activeChunks.ContainsKey(chunkCoord))
             {   
                 // New empty chunk
                 TerrainChunk newChunk;
@@ -125,23 +140,34 @@ public class WorldGenerator : MonoBehaviour
                 // Clear previous chunk data
                 newChunk.ClearData();
 
-                // Add to chunks dictionary, change name and populate + buildmesh
+                // Add to activeChunks dictionary, change name and populate + buildmesh
                 newChunk.name = $"Chunk_{x}_{z}";
 
-                chunks.Add(chunkCoord, newChunk);
+                activeChunks.Add(chunkCoord, newChunk);
                 newChunk.Init(chunkCoord, this);
             }
         }
 
-        foreach (Vector2Int pos in chunks.Keys)
+        foreach (Vector2Int pos in activeChunks.Keys)
         {
             if(instant)
             {
-                chunks[pos].populateChunk();
-                chunks[pos].buildMesh();
+                // si ya existe en world data, no lo quiero popular, quiero copiarle la data
+                if(WorldData.ContainsKey(pos))
+                {
+                    activeChunks[pos].chunkBlocks = WorldData[pos];
+                }
+                // si no existe en world data, lo quiero popular y guardar esa info en world data
+                else
+                {
+                    activeChunks[pos].populateChunk();
+                    WorldData[pos] = activeChunks[pos].chunkBlocks;
+                }
+
+                activeChunks[pos].buildMesh();
             }
             else
-                ReadyToRender.Enqueue(chunks[pos]);
+                ReadyToRender.Enqueue(activeChunks[pos]);
         }
         StartCoroutine(DrawChunkDelay());
     }
