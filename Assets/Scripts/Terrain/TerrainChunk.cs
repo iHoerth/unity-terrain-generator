@@ -76,8 +76,6 @@ public class TerrainChunk : MonoBehaviour
         neighbours.Add(Direction.West, new Vector2Int(chunkCoord.x - 1, chunkCoord.y));
         neighbours.Add(Direction.North, new Vector2Int(chunkCoord.x, chunkCoord.y + 1));
         neighbours.Add(Direction.South, new Vector2Int(chunkCoord.x, chunkCoord.y - 1));
-
-        Debug.Log(chunkCoord);
      }
 
     // Populates the chunkBlock 3D array with blocktypes
@@ -89,7 +87,6 @@ public class TerrainChunk : MonoBehaviour
 
         for(int x = 0; x < chunkWidth; x++)
         for(int z = 0; z < chunkWidth; z++)
-        for(int y = 0; y < chunkHeight; y++)
         {
             // Calculate global coords of the chunk
             int xGlobal = x + xOffset;
@@ -105,16 +102,19 @@ public class TerrainChunk : MonoBehaviour
             // float simplex1 = noise.GetSimplex(x * noiseScale, z * noiseScale) * noiseAmplitude;
             // float simplex2 = noise.GetSimplex(x * 3f, z * 3f) * 10 * (noise.GetSimplex(x*.3f, z*.3f)+.5f);
             // float noiseValue = simplex1 + simplex2 + 5;
-            
-            // Assign block types depending on distance to the noise surface
-            if (y <= surfaceY - 4)
-                chunkBlocks[x, y, z] = BlockType.Stone;
-            else if(y < surfaceY)
-                chunkBlocks[x, y, z] = BlockType.Dirt;
-            else if(y == surfaceY) // this is because y == noiseValue is never true due to int vs float. When noise == 22.8 and y 22 it fails
-                chunkBlocks[x, y, z] = BlockType.Grass;
-            else
-                chunkBlocks[x, y, z] = BlockType.Air;
+
+            for(int y = 0; y < chunkHeight; y++)
+            {
+                // Assign block types depending on distance to the noise surface
+                if (y <= surfaceY - 4)
+                    chunkBlocks[x, y, z] = BlockType.Stone;
+                else if(y < surfaceY)
+                    chunkBlocks[x, y, z] = BlockType.Dirt;
+                else if(y == surfaceY) // this is because y == noiseValue is never true due to int vs float. When noise == 22.8 and y 22 it fails
+                    chunkBlocks[x, y, z] = BlockType.Grass;
+                else
+                    chunkBlocks[x, y, z] = BlockType.Air;
+            }
         }
     }
 

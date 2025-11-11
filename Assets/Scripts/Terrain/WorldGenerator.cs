@@ -1,5 +1,6 @@
 using UnityEngine;
 using System.Collections.Generic;
+using System.Collections;
 using System.Linq;
 
 public class WorldGenerator : MonoBehaviour
@@ -17,10 +18,12 @@ public class WorldGenerator : MonoBehaviour
 
     public Vector2Int chunkCoord = new Vector2Int(0,0);
 
-    public Queue<TerrainChunk> inactiveChunks;
+    public Queue<TerrainChunk> inactiveChunks = new Queue<TerrainChunk>();
+    public Queue<TerrainChunk> ReadyToRender = new Queue<TerrainChunk>();
+
     public Dictionary<Vector2Int, TerrainChunk> chunks = new Dictionary<Vector2Int, TerrainChunk>();
 
-    void Start()
+    void Awake()
     {
         Vector2Int playerChunkPos = new Vector2Int(
             Mathf.FloorToInt(playerController.transform.position.x / 16),
@@ -29,9 +32,11 @@ public class WorldGenerator : MonoBehaviour
 
         this.playerCurrentChunkPos = playerChunkPos;
         this.playerLastChunkPos = playerChunkPos;
-        this.inactiveChunks = new Queue<TerrainChunk>();
+    }
 
-        generateWorld();
+    void Start()
+    {
+        GenerateWorld(true);
     }
 
     void Update()
@@ -46,42 +51,22 @@ public class WorldGenerator : MonoBehaviour
         if(distance >= (outerRadius - innerRadius))
         {
             playerLastChunkPos = playerCurrentChunkPos;
-            RefreshWorld();            
+            GenerateWorld(false);   
         }
     }
 
-    public void generateWorld()
-    {   
-        // Get current player position in world and conver to chunk coordinates
-        Vector2Int playerChunkPos = new Vector2Int(
-            Mathf.FloorToInt(playerController.transform.position.x / 16),
-            Mathf.FloorToInt(playerController.transform.position.z / 16)
-        );
-
-        this.playerCurrentChunkPos = playerChunkPos;
-
-        // Itarate through all chunks in radius
-        for(int x = playerChunkPos.x - outerRadius; x <= playerChunkPos.x + outerRadius; x++)
-        for(int z = playerChunkPos.y - outerRadius; z <= playerChunkPos.y + outerRadius; z++)
-        {   
-            chunkCoord = new Vector2Int(x, z);
-
-            TerrainChunk newChunk = Instantiate(chunkPrefab);
-            newChunk.name = $"Chunk_{x}_{z}";
-
-            chunks.Add(chunkCoord,newChunk);
-
-            newChunk.Init(chunkCoord, this);
+    public IEnumerator DrawChunkDelay()
+    {
+        while(ReadyToRender.Count > 0)
+        {
+            TerrainChunk newChunk = ReadyToRender.Dequeue();
             newChunk.populateChunk();
             newChunk.buildMesh();
-
+            yield return null;
         }
-
-        foreach (Vector2Int pos in chunks.Keys)
-            chunks[pos].Init(pos, this);
     }
 
-    public void RefreshWorld()
+    public void GenerateWorld(bool instant = false)
     {   
         // Get current player position in world and conver to chunk coordinates
         Vector2Int playerChunkPos = new Vector2Int(
@@ -134,7 +119,6 @@ public class WorldGenerator : MonoBehaviour
                     newChunk = inactiveChunks.Dequeue();
                     newChunk.gameObject.SetActive(true);
                 }
-
                 else 
                     newChunk = Instantiate(chunkPrefab);
 
@@ -142,17 +126,23 @@ public class WorldGenerator : MonoBehaviour
                 newChunk.ClearData();
 
                 // Add to chunks dictionary, change name and populate + buildmesh
-                chunks.Add(chunkCoord, newChunk);
                 newChunk.name = $"Chunk_{x}_{z}";
 
+                chunks.Add(chunkCoord, newChunk);
                 newChunk.Init(chunkCoord, this);
-                newChunk.populateChunk();
-                // newChunk.buildMesh();
             }
         }
 
         foreach (Vector2Int pos in chunks.Keys)
-            chunks[pos].buildMesh();
-            
+        {
+            if(instant)
+            {
+                chunks[pos].populateChunk();
+                chunks[pos].buildMesh();
+            }
+            else
+                ReadyToRender.Enqueue(chunks[pos]);
+        }
+        StartCoroutine(DrawChunkDelay());
     }
 }
