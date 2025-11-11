@@ -1,4 +1,7 @@
 using UnityEngine;
+using System.Collections;
+using System.Collections.Generic;
+using System.Threading;
 
 public class PlayerLook : MonoBehaviour
 {   
@@ -43,13 +46,6 @@ public class PlayerLook : MonoBehaviour
         float maxDistance = 3f;
 
         Physics.Raycast(origin, direction, out hit, maxDistance);
-        // if(Physics.Raycast(origin, direction, out hit, maxDistance))
-        // {
-        //     Debug.DrawRay(origin, direction, Color.red);
-        // }
-        // else {
-        //     Debug.DrawRay(origin, direction, Color.green);
-        // }
     }
 
     public void Attack()
@@ -66,14 +62,30 @@ public class PlayerLook : MonoBehaviour
         {
             Vector3Int hitLocalPos = chunk.GlobalToLocal(hitGlobalPos);
             chunk.ConvertBlock(hitGlobalPos, newType);
-            chunk.buildMesh();
 
-            if (chunk.isChunkLimit(hitGlobalPos))
+            new Thread(() => 
+            {   
+                // chunk.CalculateMeshData();
+                // chunk.meshReady = true;
+            });
+
+            // StartCoroutine(chunk.DrawMesh());
+
+            if (chunk.IsChunkLimit(hitGlobalPos))
             {
                 foreach (Vector2Int chord in chunk.neighbours.Values)
                 {
                     if (chunk.world.chunks.ContainsKey(chord))
-                        chunk.world.chunks[chord].buildMesh();
+                    {
+                        TerrainChunk currentNeighbour = chunk.world.chunks[chord];
+                        new Thread(() => 
+                        {   
+                            // currentNeighbour.CalculateMeshData();
+                            currentNeighbour.meshReady = true;
+                        });
+
+                        // StartCoroutine(currentNeighbour.DrawMesh());                        
+                    }
                 }
             }
         }
@@ -94,7 +106,13 @@ public class PlayerLook : MonoBehaviour
             {
                 // Convert block and build entire mesh
                 chunk.ConvertBlock(hitGlobalPos, newBlock);
-                chunk.buildMesh();
+                new Thread(() => 
+                {   
+                    // chunk.CalculateMeshData();
+                    // chunk.meshReady = true;
+                });
+
+                // StartCoroutine(chunk.DrawMesh());
             }
             
             else 
@@ -102,16 +120,25 @@ public class PlayerLook : MonoBehaviour
                 // Versor normal and reduce it to R2 (x,z)
                 Vector2Int fixedNormal = new Vector2Int(Mathf.RoundToInt(hit.normal.x), Mathf.RoundToInt(hit.normal.z));
                 // Obtain neighbour coords based on the normal and current chunk coords.
-                Vector2Int neighbourCoords = chunk.chunkCoord + fixedNormal;
+                Vector2Int neighbourCoords = chunk.coords + fixedNormal;
                 // Neighbour chunk should exist because the player executes the build function and chunks render around player
                 TerrainChunk neighbourChunk = chunk.world.chunks[neighbourCoords];
 
                 // Convert block and build entire mesh
                 neighbourChunk.ConvertBlock(hitGlobalPos, newBlock);
-                neighbourChunk.buildMesh();
 
                 // Rebuild neighbour to avoid duplicate in-faces.
-                chunk.buildMesh(); 
+                new Thread(() => 
+                {   
+                    // neighbourChunk.CalculateMeshData();
+                    // neighbourChunk.meshReady = true;
+
+                    // chunk.CalculateMeshData();
+                    // chunk.meshReady = true;
+                });
+
+                // StartCoroutine(neighbourChunk.DrawMesh());
+                // StartCoroutine(chunk.DrawMesh());
             }
         }
     }
