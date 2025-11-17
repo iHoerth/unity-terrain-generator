@@ -9,20 +9,22 @@ public class WorldGenerator : MonoBehaviour
     public PlayerMotor playerController;
     // private int chunkRadius = 3;
 
-    private int innerRadius = 1;
-    private int outerRadius = 3;
+    public int innerRadius = 3;
+    public int outerRadius = 6;
 
     public Vector2Int playerCurrentChunkPos;
     public Vector2Int playerLastChunkPos;
 
-    // Noise Variables
+    // Noise variables
     public int seed = 42;
-    public const float frequency = 1.5f;
-    public const float amplitude = 2f;
-    public const float scale = 1.7f;
-    public const float lacunarity = 1.8f;
-    public const float persistance = 0.5f;
-    public const int octaves = 4;
+    public float persistance = 0.5f;
+    public float lacunarity = 1.7f;
+    public float amplitude = 2f;
+    public float frequency = 1.35f;
+    public float scale = 3.10f;
+    public int octaves = 4;
+    public float heightMultiplier = 30f;
+    public AnimationCurve meshHeightCurve;
     public float globalMinNoise;
     public float globalMaxNoise;
 

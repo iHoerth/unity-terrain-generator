@@ -272,7 +272,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::TerrainChunk
   chunkCoord: {x: 0, y: 0}
   world: {fileID: 0}
-  seed: 42
   maxNoiseValue: 0
   minNoiseValue: 0
 --- !u!23 &158745655
@@ -907,6 +906,118 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &1234624890
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1234624894}
+  - component: {fileID: 1234624893}
+  - component: {fileID: 1234624892}
+  - component: {fileID: 1234624891}
+  m_Layer: 0
+  m_Name: Plane
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!64 &1234624891
+MeshCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1234624890}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 0
+  m_ProvidesContacts: 0
+  m_Enabled: 0
+  serializedVersion: 5
+  m_Convex: 0
+  m_CookingOptions: 30
+  m_Mesh: {fileID: 10209, guid: 0000000000000000e000000000000000, type: 0}
+--- !u!23 &1234624892
+MeshRenderer:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1234624890}
+  m_Enabled: 1
+  m_CastShadows: 1
+  m_ReceiveShadows: 1
+  m_DynamicOccludee: 1
+  m_StaticShadowCaster: 0
+  m_MotionVectors: 1
+  m_LightProbeUsage: 1
+  m_ReflectionProbeUsage: 1
+  m_RayTracingMode: 2
+  m_RayTraceProcedural: 0
+  m_RayTracingAccelStructBuildFlagsOverride: 0
+  m_RayTracingAccelStructBuildFlags: 1
+  m_SmallMeshCulling: 1
+  m_ForceMeshLod: -1
+  m_MeshLodSelectionBias: 0
+  m_RenderingLayerMask: 1
+  m_RendererPriority: 0
+  m_Materials:
+  - {fileID: 2100000, guid: 31321ba15b8f8eb4c954353edc038b1d, type: 2}
+  m_StaticBatchInfo:
+    firstSubMesh: 0
+    subMeshCount: 0
+  m_StaticBatchRoot: {fileID: 0}
+  m_ProbeAnchor: {fileID: 0}
+  m_LightProbeVolumeOverride: {fileID: 0}
+  m_ScaleInLightmap: 1
+  m_ReceiveGI: 1
+  m_PreserveUVs: 0
+  m_IgnoreNormalsForChartDetection: 0
+  m_ImportantGI: 0
+  m_StitchLightmapSeams: 1
+  m_SelectedEditorRenderState: 3
+  m_MinimumChartSize: 4
+  m_AutoUVMaxDistance: 0.5
+  m_AutoUVMaxAngle: 89
+  m_LightmapParameters: {fileID: 0}
+  m_GlobalIlluminationMeshLod: 0
+  m_SortingLayerID: 0
+  m_SortingLayer: 0
+  m_SortingOrder: 0
+  m_AdditionalVertexStreams: {fileID: 0}
+--- !u!33 &1234624893
+MeshFilter:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1234624890}
+  m_Mesh: {fileID: 10209, guid: 0000000000000000e000000000000000, type: 0}
+--- !u!4 &1234624894
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1234624890}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 65, z: 0}
+  m_LocalScale: {x: 124.131966, y: 124.131966, z: 124.131966}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1448505752
 GameObject:
   m_ObjectHideFlags: 0
@@ -941,7 +1052,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::TerrainChunk
   chunkCoord: {x: 0, y: 0}
   world: {fileID: 0}
-  seed: 42
   maxNoiseValue: 0
   minNoiseValue: 0
 --- !u!23 &1448505754
@@ -1146,7 +1256,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::TerrainChunk
   chunkCoord: {x: 0, y: 0}
   world: {fileID: 0}
-  seed: 42
   maxNoiseValue: 0
   minNoiseValue: 0
 --- !u!23 &1506024627
@@ -1899,9 +2008,69 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::WorldGenerator
   chunkPrefab: {fileID: 4649941290353263262, guid: cb262594fe6f1c84b8e219329a5dc9de, type: 3}
   playerController: {fileID: 467225418}
+  innerRadius: 3
+  outerRadius: 14
   playerCurrentChunkPos: {x: 0, y: 0}
   playerLastChunkPos: {x: 0, y: 0}
   seed: 42
+  persistance: 0.5
+  lacunarity: 1.7
+  amplitude: 2
+  frequency: 1.35
+  scale: 3.1
+  octaves: 4
+  heightMultiplier: 30
+  meshHeightCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0.0013656626
+      value: 0.0017899275
+      inSlope: 1.3201652
+      outSlope: 1.3201652
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0.07204449
+    - serializedVersion: 3
+      time: 0.16016887
+      value: 0.1430095
+      inSlope: 0.77210796
+      outSlope: 0.77210796
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0.41049573
+    - serializedVersion: 3
+      time: 0.2781079
+      value: 0.37819147
+      inSlope: 0.5619699
+      outSlope: 0.5619699
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0.33333334
+    - serializedVersion: 3
+      time: 0.83226097
+      value: 0.8127449
+      inSlope: 1.7585925
+      outSlope: 1.7585925
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0.17333229
+    - serializedVersion: 3
+      time: 0.99890137
+      value: 1.0023766
+      inSlope: 0.27011636
+      outSlope: 0.27011636
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.6186145
+      outWeight: 0
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
   globalMinNoise: 0
   globalMaxNoise: 0
   chunkCoord: {x: 0, y: 0}
@@ -2058,7 +2227,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::TerrainChunk
   chunkCoord: {x: 0, y: 0}
   world: {fileID: 0}
-  seed: 42
   maxNoiseValue: 0
   minNoiseValue: 0
 --- !u!23 &2142332068
@@ -2129,3 +2297,4 @@ SceneRoots:
   - {fileID: 1448505756}
   - {fileID: 1762751496}
   - {fileID: 1759157464}
+  - {fileID: 1234624894}

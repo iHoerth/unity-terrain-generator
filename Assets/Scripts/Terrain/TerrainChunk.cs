@@ -21,16 +21,7 @@ public class TerrainChunk : MonoBehaviour
     public Dictionary<Direction, Vector2Int> neighbours = new();
     public Dictionary<Vector3Int, BlockType> blockData = new();
 
-    // Noise variables
     FastNoise noise = new FastNoise();
-    public int seed = 42;
-    public const float persistance = 0.5f;
-    public const float lacunarity = 1.8f;
-    public const float amplitude = 2f;
-    public const float frequency = 1.5f;
-    public const float scale = 1.7f;
-    public const int octaves = 4;
-    public const float heightMultiplier = 30f;
 
     public float maxNoiseValue;
     public float minNoiseValue;
@@ -108,42 +99,33 @@ public class TerrainChunk : MonoBehaviour
             int xGlobal = x + xOffset;
             int zGlobal = z + zOffset;
 
-            float amp = amplitude;
-            float freq = frequency;
+            float amp = world.amplitude;
+            float freq = world.frequency;
 
             float noiseHeight = 0;
-            // Debug.Log(octaves);
 
-            for(int i = 0; i < octaves; i++)
+            for(int i = 0; i < world.octaves; i++)
             {
 
-                float noiseValue = (noise.GetSimplex(xGlobal / scale * freq, zGlobal / scale * freq));
+                float noiseValue = (noise.GetSimplex(xGlobal / world.scale * freq, zGlobal / world.scale * freq));
                 noiseHeight += noiseValue * amp;
-                // Debug.Log(noiseHeight);
 
-                freq *= lacunarity;
-                amp *= persistance;
+                freq *= world.lacunarity;
+                amp *= world.persistance;
             }
 
-            if(maxNoiseValue < noiseHeight)
-            {
-                maxNoiseValue = noiseHeight;
-            }
-            else if(minNoiseValue > noiseHeight)
-            {
-                minNoiseValue = noiseHeight;
-            }
-
-            float normalizedHeight = Mathf.InverseLerp(minNoiseValue, maxNoiseValue, noiseHeight) * heightMultiplier;
+            float normalizedHeight = Mathf.InverseLerp(minNoiseValue, maxNoiseValue, noiseHeight);
             // float normalizedHeight = (noiseHeight + 1) / 2f;
-            
+            normalizedHeight = world.meshHeightCurve.Evaluate(normalizedHeight);
 
-            float seaLevel = Mathf.FloorToInt(TerrainChunk.chunkHeight * 1/2 + normalizedHeight);
+            float seaLevel = Mathf.Lerp(30, 115, normalizedHeight);
+            seaLevel = Mathf.FloorToInt(seaLevel);
+            // float seaLevel = Mathf.FloorToInt(TerrainChunk.chunkHeight * 1/2 + normalizedHeight);
 
             for(int y = 0; y < chunkHeight; y++)
             {
                 // Assign block types depending on distance to the noise surface
-                if (y <= seaLevel - 4)
+                if (y <= seaLevel - 5)
                     chunkBlocks[x, y, z] = BlockType.Stone;
                 else if(y < seaLevel)
                     chunkBlocks[x, y, z] = BlockType.Dirt;
