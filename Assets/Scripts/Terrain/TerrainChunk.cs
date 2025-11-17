@@ -10,6 +10,8 @@ using TMPro;
 [RequireComponent(typeof(MeshFilter), typeof(MeshRenderer))]
 public class TerrainChunk : MonoBehaviour
 {
+    public enum NormalizeMode {Local, Global};
+
     // World variables
     public const int chunkHeight = 128;
     public const int chunkWidth = 16;
@@ -20,11 +22,18 @@ public class TerrainChunk : MonoBehaviour
     public Dictionary<Vector3Int, BlockType> blockData = new();
 
     // Noise variables
-    public float noiseScale = 0.8f;
-    public float noiseAmplitude = 10f;
-    public float freq = 0.05f;
-    public int seed = 42;
     FastNoise noise = new FastNoise();
+    public int seed = 42;
+    public const float persistance = 0.5f;
+    public const float lacunarity = 1.8f;
+    public const float amplitude = 2f;
+    public const float frequency = 1.5f;
+    public const float scale = 1.7f;
+    public const int octaves = 4;
+    public const float heightMultiplier = 30f;
+
+    public float maxNoiseValue;
+    public float minNoiseValue;
 
     // Mesh variables
     List<Vector3> vertices =  new List<Vector3>();
@@ -59,6 +68,7 @@ public class TerrainChunk : MonoBehaviour
                 neighbour.buildMesh();
         }
     }
+
     public void ClearData()
     {
         neighbours.Clear();
@@ -67,11 +77,15 @@ public class TerrainChunk : MonoBehaviour
         triangles.Clear();
         chunkBlocks = new BlockType[chunkWidth, chunkHeight, chunkWidth];
     }
+    
     // Initializes the activeChunks & neighbours global position variables
-    public void Init(Vector2Int chunkCoord, WorldGenerator world)
+    public void Init(Vector2Int chunkCoord, WorldGenerator world, float globalMinNoise, float globalMaxNoise)
     {
         this.chunkCoord = chunkCoord;
         this.world = world;
+        this.minNoiseValue = globalMinNoise;
+        this.maxNoiseValue = globalMaxNoise;
+
         neighbours.Clear();
 
         neighbours.Add(Direction.East, new Vector2Int(chunkCoord.x + 1, chunkCoord.y));
@@ -94,33 +108,51 @@ public class TerrainChunk : MonoBehaviour
             int xGlobal = x + xOffset;
             int zGlobal = z + zOffset;
 
-            // Normalized noise
-            float n = (noise.GetSimplex(xGlobal * noiseScale, zGlobal * noiseScale) + 1f) * 0.5f; // de [-1,1] → [0,1]
-            float noiseValue = n * (chunkHeight/4 - 1);
-            
-            int surfaceY = Mathf.FloorToInt(noiseValue);
+            float amp = amplitude;
+            float freq = frequency;
 
-            // Old noise
-            // float simplex1 = noise.GetSimplex(x * noiseScale, z * noiseScale) * noiseAmplitude;
-            // float simplex2 = noise.GetSimplex(x * 3f, z * 3f) * 10 * (noise.GetSimplex(x*.3f, z*.3f)+.5f);
-            // float noiseValue = simplex1 + simplex2 + 5;
+            float noiseHeight = 0;
+            // Debug.Log(octaves);
+
+            for(int i = 0; i < octaves; i++)
+            {
+
+                float noiseValue = (noise.GetSimplex(xGlobal / scale * freq, zGlobal / scale * freq));
+                noiseHeight += noiseValue * amp;
+                // Debug.Log(noiseHeight);
+
+                freq *= lacunarity;
+                amp *= persistance;
+            }
+
+            if(maxNoiseValue < noiseHeight)
+            {
+                maxNoiseValue = noiseHeight;
+            }
+            else if(minNoiseValue > noiseHeight)
+            {
+                minNoiseValue = noiseHeight;
+            }
+
+            float normalizedHeight = Mathf.InverseLerp(minNoiseValue, maxNoiseValue, noiseHeight) * heightMultiplier;
+            // float normalizedHeight = (noiseHeight + 1) / 2f;
+            
+
+            float seaLevel = Mathf.FloorToInt(TerrainChunk.chunkHeight * 1/2 + normalizedHeight);
 
             for(int y = 0; y < chunkHeight; y++)
             {
                 // Assign block types depending on distance to the noise surface
-                if (y <= surfaceY - 4)
+                if (y <= seaLevel - 4)
                     chunkBlocks[x, y, z] = BlockType.Stone;
-                else if(y < surfaceY)
+                else if(y < seaLevel)
                     chunkBlocks[x, y, z] = BlockType.Dirt;
-                else if(y == surfaceY) // this is because y == noiseValue is never true due to int vs float. When noise == 22.8 and y 22 it fails
+                else if(y == seaLevel) // this is because y == noiseValue is never true due to int vs float. When noise == 22.8 and y 22 it fails
                     chunkBlocks[x, y, z] = BlockType.Grass;
                 else
                     chunkBlocks[x, y, z] = BlockType.Air;
-
             }
         }
-
-
     }
 
     // Checks if neighbour chunk has air in the border at that position

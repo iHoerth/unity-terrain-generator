@@ -9,12 +9,22 @@ public class WorldGenerator : MonoBehaviour
     public PlayerMotor playerController;
     // private int chunkRadius = 3;
 
-    private int innerRadius = 5;
-    private int outerRadius = 12;
+    private int innerRadius = 1;
+    private int outerRadius = 3;
 
     public Vector2Int playerCurrentChunkPos;
     public Vector2Int playerLastChunkPos;
 
+    // Noise Variables
+    public int seed = 42;
+    public const float frequency = 1.5f;
+    public const float amplitude = 2f;
+    public const float scale = 1.7f;
+    public const float lacunarity = 1.8f;
+    public const float persistance = 0.5f;
+    public const int octaves = 4;
+    public float globalMinNoise;
+    public float globalMaxNoise;
 
     public Vector2Int chunkCoord = new Vector2Int(0,0);
 
@@ -37,6 +47,23 @@ public class WorldGenerator : MonoBehaviour
 
     void Start()
     {
+        FastNoise noise = new FastNoise();
+        (float minNoise, float maxNoise) = NoiseSampler.SampleNoiseRange(
+            noise,
+            1024,
+            frequency,
+            amplitude,
+            scale,
+            lacunarity,
+            persistance,
+            octaves
+        );
+
+        globalMinNoise = minNoise;
+        globalMaxNoise = maxNoise;
+
+        Debug.Log(globalMinNoise + " " + globalMaxNoise);
+
         GenerateWorld(true);
     }
 
@@ -62,7 +89,7 @@ public class WorldGenerator : MonoBehaviour
         {
             TerrainChunk newChunk = ReadyToRender.Dequeue();
             Vector2Int pos = newChunk.chunkCoord;
-            
+
             // si ya existe en world data, no lo quiero popular, quiero copiarle la data
             if(WorldData.ContainsKey(pos))
             {
@@ -144,7 +171,7 @@ public class WorldGenerator : MonoBehaviour
                 newChunk.name = $"Chunk_{x}_{z}";
 
                 activeChunks.Add(chunkCoord, newChunk);
-                newChunk.Init(chunkCoord, this);
+                newChunk.Init(chunkCoord, this, globalMinNoise, globalMaxNoise);
             }
         }
 
