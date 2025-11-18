@@ -118,18 +118,37 @@ public class TerrainChunk : MonoBehaviour
             // float normalizedHeight = (noiseHeight + 1) / 2f;
             normalizedHeight = world.meshHeightCurve.Evaluate(normalizedHeight);
 
-            float seaLevel = Mathf.Lerp(30, 115, normalizedHeight);
-            seaLevel = Mathf.FloorToInt(seaLevel);
-            // float seaLevel = Mathf.FloorToInt(TerrainChunk.chunkHeight * 1/2 + normalizedHeight);
+            float groundHeight = Mathf.Lerp(40, 115, normalizedHeight);
+            groundHeight = Mathf.FloorToInt(groundHeight);
+            // float groundHeight = Mathf.FloorToInt(TerrainChunk.chunkHeight * 1/2 + normalizedHeight);
 
             for(int y = 0; y < chunkHeight; y++)
-            {
-                // Assign block types depending on distance to the noise surface
-                if (y <= seaLevel - 5)
+            {   
+                int caveLevel = Mathf.FloorToInt(groundHeight) - 5;
+                float caveTreshold = 0.28f;
+
+                if(y == 0)
+                {
                     chunkBlocks[x, y, z] = BlockType.Stone;
-                else if(y < seaLevel)
+                    continue;
+                }   
+                
+                // Assign block types depending on distance to the noise groundHeight
+                // Assign block types depending on distance to the noise groundHeight
+                if(y < caveLevel)
+                {
+                    float caveNoise = (noise.GetPerlinFractal(xGlobal * world.caveScaleW, y * world.caveScaleH, zGlobal * world.caveScaleW ));
+
+                    if (caveNoise > caveTreshold)
+                        chunkBlocks[x, y, z] = BlockType.Air;
+                    else
+                        chunkBlocks[x, y, z] = BlockType.Stone;   
+                }
+                else if (y <= groundHeight - 5)
+                    chunkBlocks[x, y, z] = BlockType.Stone;
+                else if(y < groundHeight)
                     chunkBlocks[x, y, z] = BlockType.Dirt;
-                else if(y == seaLevel) // this is because y == noiseValue is never true due to int vs float. When noise == 22.8 and y 22 it fails
+                else if(y == groundHeight) // this is because y == noiseValue is never true due to int vs float. When noise == 22.8 and y 22 it fails
                     chunkBlocks[x, y, z] = BlockType.Grass;
                 else
                     chunkBlocks[x, y, z] = BlockType.Air;
@@ -362,10 +381,26 @@ public class TerrainChunk : MonoBehaviour
         mesh.uv = uvs.ToArray();
 
         mesh.RecalculateNormals();
-        mesh.RecalculateTangents();
-        mesh.RecalculateBounds();
+        // mesh.RecalculateTangents();
+        // mesh.RecalculateBounds();
 
         GetComponent<MeshCollider>().sharedMesh = mesh;
         GetComponent<MeshFilter>().mesh = mesh;
+    }
+
+    public void DrawMesh()
+    {
+        Mesh mesh = new Mesh();
+
+        mesh.vertices = vertices.ToArray();
+        mesh.triangles = triangles.ToArray();
+        mesh.uv = uvs.ToArray();
+
+        mesh.RecalculateNormals();
+        // mesh.RecalculateTangents();
+        // mesh.RecalculateBounds();
+
+        GetComponent<MeshCollider>().sharedMesh = mesh;
+        GetComponent<MeshFilter>().mesh = mesh;  
     }
 }

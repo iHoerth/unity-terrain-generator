@@ -27,6 +27,9 @@ public class WorldGenerator : MonoBehaviour
     public AnimationCurve meshHeightCurve;
     public float globalMinNoise;
     public float globalMaxNoise;
+    public float caveScaleW = 10f;
+    public float caveScaleH = 5f;
+
 
     public Vector2Int chunkCoord = new Vector2Int(0,0);
 
@@ -95,14 +98,14 @@ public class WorldGenerator : MonoBehaviour
             // si ya existe en world data, no lo quiero popular, quiero copiarle la data
             if(WorldData.ContainsKey(pos))
             {
-                activeChunks[pos].chunkBlocks = WorldData[pos];
+                newChunk.chunkBlocks = WorldData[pos];
             }
 
             // si no existe en world data, lo quiero popular y guardar esa info en world data
             else
             {
-                activeChunks[pos].populateChunk();
-                WorldData[pos] = activeChunks[pos].chunkBlocks;
+                newChunk.populateChunk();
+                WorldData[pos] = newChunk.chunkBlocks;
             }
 
             newChunk.buildMesh();
