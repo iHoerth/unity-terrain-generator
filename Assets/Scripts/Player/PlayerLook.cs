@@ -52,67 +52,75 @@ public class PlayerLook : MonoBehaviour
         // }
     }
 
-    public void Attack()
-    {
-        if (hit.collider == null) return;
-        // Position of the Raycast hit (minus normal) to be "inside" the cube and ensure being in the correct cube 
-        Vector3Int hitGlobalPos = Vector3Int.FloorToInt(hit.point - hit.normal * 0.5f);
+    // public void Attack()
+    // {
+    //     if (hit.collider == null) return;
+    //     // Position of the Raycast hit (minus normal) to be "inside" the cube and ensure being in the correct cube 
+    //     Vector3Int hitGlobalPos = Vector3Int.FloorToInt(hit.point - hit.normal * 0.5f);
 
-        BlockType newType = BlockType.Air;
+    //     BlockType newType = BlockType.Air;
 
-        GameObject target = hit.collider.gameObject;
+    //     GameObject target = hit.collider.gameObject;
         
-        if (target.TryGetComponent<TerrainChunk>(out TerrainChunk chunk))
-        {
-            Vector3Int hitLocalPos = chunk.GlobalToLocal(hitGlobalPos);
-            chunk.ConvertBlock(hitGlobalPos, newType);
-            chunk.buildMesh();
+    //     if (target.TryGetComponent<TerrainChunk>(out TerrainChunk chunk))
+    //     {
+    //         Vector3Int hitLocalPos = chunk.GlobalToLocal(hitGlobalPos);
+    //         chunk.ConvertBlock(hitGlobalPos, newType);
+    //         chunk.GenerateMeshData();
+    //         chunk.DrawMesh();
 
-            if (chunk.isChunkLimit(hitGlobalPos))
-            {
-                foreach (Vector2Int chord in chunk.neighbours.Values)
-                {
-                    if (chunk.world.activeChunks.ContainsKey(chord))
-                        chunk.world.activeChunks[chord].buildMesh();
-                }
-            }
-        }
-    }
+    //         if (chunk.isChunkLimit(hitGlobalPos))
+    //         {
+    //             foreach (Vector2Int chord in chunk.neighbours.Values)
+    //             {
+    //                 if (chunk.world.activeChunks.ContainsKey(chord))
+    //                     chunk.world.activeChunks[chord].GenerateMeshData();
+    //                     chunk.world.activeChunks[chord].DrawMesh();
+    //             }
+    //         }
+    //     }
+    // }
 
-    public void Build(BlockType newBlock = BlockType.Dirt)
-    {  
-        // Return when Raycast pointing null to avoid error 
-        if (hit.collider == null) return;
-        // Position of the Raycast hit (plus normal) to be "outside" the cube in the direction of the face i am currently looking 
-        Vector3Int hitGlobalPos = Vector3Int.FloorToInt(hit.point + hit.normal * 0.5f);
-        GameObject target = hit.collider.gameObject;
+    // public void Build(BlockType newBlock = BlockType.Dirt)
+    // {  
+    //     // Return when Raycast pointing null to avoid error 
+    //     if (hit.collider == null) return;
+    //     // Position of the Raycast hit (plus normal) to be "outside" the cube in the direction of the face i am currently looking 
+    //     Vector3Int hitGlobalPos = Vector3Int.FloorToInt(hit.point + hit.normal * 0.5f);
+    //     GameObject target = hit.collider.gameObject;
 
-        // Get hit chunk reference if possible
-        if (target.TryGetComponent<TerrainChunk>(out TerrainChunk chunk))
-        {   
-            if(chunk.InsideChunk(hitGlobalPos))
-            {
-                // Convert block and build entire mesh
-                chunk.ConvertBlock(hitGlobalPos, newBlock);
-                chunk.buildMesh();
-            }
+    //     // Get hit chunk reference if possible
+    //     if (target.TryGetComponent<TerrainChunk>(out TerrainChunk chunk))
+    //     {   
+    //         if(chunk.InsideChunk(hitGlobalPos))
+    //         {
+    //             // Convert block and build entire mesh
+    //             chunk.ConvertBlock(hitGlobalPos, newBlock);
+    //             chunk.GenerateMeshData();
+    //             chunk.DrawMesh();
+    //         }
             
-            else 
-            {
-                // Versor normal and reduce it to R2 (x,z)
-                Vector2Int fixedNormal = new Vector2Int(Mathf.RoundToInt(hit.normal.x), Mathf.RoundToInt(hit.normal.z));
-                // Obtain neighbour coords based on the normal and current chunk coords.
-                Vector2Int neighbourCoords = chunk.chunkCoord + fixedNormal;
-                // Neighbour chunk should exist because the player executes the build function and activeChunks render around player
-                TerrainChunk neighbourChunk = chunk.world.activeChunks[neighbourCoords];
+    //         else 
+    //         {
+    //             // Versor normal and reduce it to R2 (x,z)
+    //             Vector2Int fixedNormal = new Vector2Int(Mathf.RoundToInt(hit.normal.x), Mathf.RoundToInt(hit.normal.z));
+    //             // Obtain neighbour coords based on the normal and current chunk coords.
+    //             Vector2Int neighbourCoords = chunk.chunkCoord + fixedNormal;
+    //             // Neighbour chunk should exist because the player executes the build function and activeChunks render around player
+    //             TerrainChunk neighbourChunk = chunk.world.activeChunks[neighbourCoords];
 
-                // Convert block and build entire mesh
-                neighbourChunk.ConvertBlock(hitGlobalPos, newBlock);
-                neighbourChunk.buildMesh();
+    //             // Convert block and build entire mesh
+    //             neighbourChunk.ConvertBlock(hitGlobalPos, newBlock);
+    //             neighbourChunk.GenerateMeshData();
+    //             neighbourChunk.DrawMesh();
 
-                // Rebuild neighbour to avoid duplicate in-faces.
-                chunk.buildMesh(); 
-            }
-        }
-    }
+    //             // Rebuild neighbour to avoid duplicate in-faces.
+                
+    //             // Esto es necesario? De ultima q se regenere solo cuando construya ahi o cuando me aleje
+    //             // debe ser mas caro esto q las caras duplicadas
+    //             chunk.GenerateMeshData(); 
+    //             chunk.DrawMesh(); 
+    //         }
+    //     }
+    // }
 }

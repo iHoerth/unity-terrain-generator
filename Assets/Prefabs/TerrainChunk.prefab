@@ -126,7 +126,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::TerrainChunk
   chunkCoord: {x: 1, y: 2}
-  noiseScale: 0.8
-  noiseAmplitude: 15
-  freq: 0.05
-  seed: 42
+  world: {fileID: 0}
+  maxNoiseValue: 0
+  minNoiseValue: 0

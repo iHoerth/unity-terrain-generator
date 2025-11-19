@@ -1,9 +1,8 @@
-
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
-
+using System;
 // Debug
 using TMPro;
 
@@ -32,10 +31,7 @@ public class TerrainChunk : MonoBehaviour
     List<int> triangles = new List<int>();
 
     // Chunkdata Array
-    public BlockType[,,] chunkBlocks = new BlockType[chunkWidth, chunkHeight, chunkWidth];
-
-    public enum FaceDirection {Top, Bottom, Right, Left, Front, Back};
-    public enum Direction {North, West, East, South};
+    public BlockType[,,] blocks = new BlockType[chunkWidth, chunkHeight, chunkWidth];
 
     public static Dictionary<FaceDirection, Vector3[]> FaceVertexMap = new Dictionary<FaceDirection, Vector3[]>()
     {
@@ -50,14 +46,15 @@ public class TerrainChunk : MonoBehaviour
     public void Start()
     {
         // Iterates neighbour dictionary
-        foreach (Direction dir in neighbours.Keys)
-        {
-            Vector2Int neighbourCoord = neighbours[dir];
-            // Tries to get neighbour chunk reference
-            if (world.activeChunks.TryGetValue(neighbourCoord, out TerrainChunk neighbour))
-                // Forces neighbour to "rebuild" mesh to clean duplicate faces. Will replace in the future with "rebuildBorder()"
-                neighbour.buildMesh();
-        }
+        // foreach (Direction dir in neighbours.Keys)
+        // {
+        //     Vector2Int neighbourCoord = neighbours[dir];
+        //     // Tries to get neighbour chunk reference
+        //     if (world.activeChunks.TryGetValue(neighbourCoord, out TerrainChunk neighbour))
+        //         // Forces neighbour to "rebuild" mesh to clean duplicate faces.
+        //         neighbour.GenerateMeshData();
+        //         neighbour.DrawMesh();
+        // }
     }
 
     public void ClearData()
@@ -66,7 +63,7 @@ public class TerrainChunk : MonoBehaviour
         vertices.Clear();
         uvs.Clear();
         triangles.Clear();
-        chunkBlocks = new BlockType[chunkWidth, chunkHeight, chunkWidth];
+        Array.Clear(blocks, 0, blocks.Length);
     }
     
     // Initializes the activeChunks & neighbours global position variables
@@ -129,7 +126,7 @@ public class TerrainChunk : MonoBehaviour
 
                 if(y == 0)
                 {
-                    chunkBlocks[x, y, z] = BlockType.Stone;
+                    blocks[x, y, z] = BlockType.Stone;
                     continue;
                 }   
                 
@@ -140,18 +137,18 @@ public class TerrainChunk : MonoBehaviour
                     float caveNoise = (noise.GetPerlinFractal(xGlobal * world.caveScaleW, y * world.caveScaleH, zGlobal * world.caveScaleW ));
 
                     if (caveNoise > caveTreshold)
-                        chunkBlocks[x, y, z] = BlockType.Air;
+                        blocks[x, y, z] = BlockType.Air;
                     else
-                        chunkBlocks[x, y, z] = BlockType.Stone;   
+                        blocks[x, y, z] = BlockType.Stone;   
                 }
                 else if (y <= groundHeight - 5)
-                    chunkBlocks[x, y, z] = BlockType.Stone;
+                    blocks[x, y, z] = BlockType.Stone;
                 else if(y < groundHeight)
-                    chunkBlocks[x, y, z] = BlockType.Dirt;
-                else if(y == groundHeight) // this is because y == noiseValue is never true due to int vs float. When noise == 22.8 and y 22 it fails
-                    chunkBlocks[x, y, z] = BlockType.Grass;
+                    blocks[x, y, z] = BlockType.Dirt;
+                else if(y == groundHeight)
+                    blocks[x, y, z] = BlockType.Grass;
                 else
-                    chunkBlocks[x, y, z] = BlockType.Air;
+                    blocks[x, y, z] = BlockType.Air;
             }
         }
     }
@@ -164,20 +161,20 @@ public class TerrainChunk : MonoBehaviour
         int z = currentPos.z;
 
         if(world.activeChunks.TryGetValue(chunkCoords, out TerrainChunk neighbour))
-        if(neighbour.chunkBlocks[x, y, z] == BlockType.Air)
+        if(neighbour.blocks[x, y, z] == BlockType.Air)
             return true;
 
         return false;
     }   
+
     // Checks if the given global position is the chunk local limit x,z = 0 || x,z = 15.
     public bool isChunkLimit(Vector3Int globalPos)
     {
         Vector3Int localPos = GlobalToLocal(globalPos);
 
         if(localPos.x == 0 || localPos.x == chunkWidth -1 || localPos.z == 0 || localPos.z == chunkWidth - 1)
-        {
             return true;
-        }
+
         return false;
     }
 
@@ -187,16 +184,10 @@ public class TerrainChunk : MonoBehaviour
         Vector3Int localPos = GlobalToLocal(globalPos);
 
         if(localPos.x < 0 || localPos.x > chunkWidth -1)     
-        {
-            // Debug.Log("localPos.x Outside:" + localPos.x);
             return false;
-        }   
 
         if(localPos.z < 0 || localPos.z > chunkWidth -1)     
-        {
-            // Debug.Log("localPos.z Outside:" + localPos.z);
             return false;
-        } 
 
         return true;
     }
@@ -260,17 +251,12 @@ public class TerrainChunk : MonoBehaviour
     {
         Vector3Int localPos = GlobalToLocal(globalPos);
 
-        if(localPos.y > 0)
-        {
-            chunkBlocks[localPos.x, localPos.y , localPos.z] = newType;
-        }
+        if(localPos.y > 0) 
+            blocks[localPos.x, localPos.y , localPos.z] = newType;
     }
 
-    public void buildMesh()
+    public void GenerateMeshData()
     {   
-        
-        Mesh mesh = new Mesh();
-
         vertices.Clear();
         triangles.Clear();
         uvs.Clear();
@@ -280,121 +266,97 @@ public class TerrainChunk : MonoBehaviour
         for(int z = 0; z < chunkWidth; z++)
         for(int y = 0; y < chunkHeight; y++)
         {   
-            BlockType currentType = chunkBlocks[x, y, z];
+            BlockType currentType = blocks[x, y, z];
             Vector3Int currentPos = new Vector3Int(x, y, z);
 
             if(currentType != BlockType.Air)
             {
                 // Top face y+
-                if(y == chunkHeight - 1 || chunkBlocks[x, y + 1, z] == BlockType.Air)
-                {
-                    FaceDirection face = FaceDirection.Top;
-                    AddFace(face, currentPos, chunkCoord, currentType);
-                }
+                if(y == chunkHeight - 1 || blocks[x, y + 1, z] == BlockType.Air)
+                    AddFace(FaceDirection.Top, currentPos, chunkCoord, currentType);
 
                 // Bottom Face y-
-                if(y > 0 && chunkBlocks[x, y - 1, z] == BlockType.Air)
-                {
-                    FaceDirection face = FaceDirection.Bottom;
-                    AddFace(face, currentPos, chunkCoord, currentType);
-                }
+                if(y > 0 && blocks[x, y - 1, z] == BlockType.Air)
+                    AddFace(FaceDirection.Bottom, currentPos, chunkCoord, currentType);
 
                 // Right Face x+
                 // Checks if current x is in the border or somewhere in the middle
                 if(x < chunkWidth - 1)
                 {
-                    if(chunkBlocks[x + 1, y, z] == BlockType.Air)
-                    {
-                        FaceDirection face = FaceDirection.Right;
-                        AddFace(face, currentPos, chunkCoord, currentType);
-                    }
-                } else {
-                // Current X in the limit, so need to check for neighbour blocktype
-                   Vector3Int border =  new Vector3Int(0, y, z);
-                   if(checkNeighbourAir(neighbours[Direction.East], border))
-                   {
-                        FaceDirection face = FaceDirection.Right;
-                        AddFace(face, currentPos, chunkCoord, currentType);
-                   }
-                }
+                    if(blocks[x + 1, y, z] == BlockType.Air)
+                        AddFace(FaceDirection.Right, currentPos, chunkCoord, currentType);
+                } 
+                // else {
+                // // Current X in the limit, so need to check for neighbour blocktype
+                //    Vector3Int border =  new Vector3Int(0, y, z);
+                //    if(checkNeighbourAir(neighbours[Direction.East], border))
+                //         AddFace(FaceDirection.Right, currentPos, chunkCoord, currentType);
+                // }
 
                 // Left Face x-
                 if(x > 0)
                 {
-                    if (chunkBlocks[x - 1, y, z] == BlockType.Air)
-                    {
-                        FaceDirection face = FaceDirection.Left;
-                        AddFace(face, currentPos, chunkCoord, currentType);
-                    }
-                } else {
-                   Vector3Int border =  new Vector3Int(chunkWidth - 1, y, z);
+                    if (blocks[x - 1, y, z] == BlockType.Air)
+                        AddFace(FaceDirection.Left, currentPos, chunkCoord, currentType);
+                } 
+                // else {
+                //    Vector3Int border =  new Vector3Int(chunkWidth - 1, y, z);
                    
-                   if(checkNeighbourAir(neighbours[Direction.West], border))
-                   {
-                        FaceDirection face = FaceDirection.Left;
-                        AddFace(face, currentPos, chunkCoord, currentType);
-                   }
-                }
+                //    if(checkNeighbourAir(neighbours[Direction.West], border))
+                //    {
+                //         FaceDirection face = FaceDirection.Left;
+                //         AddFace(face, currentPos, chunkCoord, currentType);
+                //    }
+                // }
 
                 // Front Face z+
                 if(z < chunkWidth - 1)
                 {
-                    if(chunkBlocks[x, y, z + 1] == BlockType.Air)
+                    if(blocks[x, y, z + 1] == BlockType.Air)
                     {
                         FaceDirection face = FaceDirection.Front;
                         AddFace(face, currentPos, chunkCoord, currentType);
                     }
-                } else {
-                   Vector3Int border =  new Vector3Int(x, y, 0);
-
-                   if(checkNeighbourAir(neighbours[Direction.North], border))
-                   {
-                        FaceDirection face = FaceDirection.Front;
-                        AddFace(face, currentPos, chunkCoord, currentType);
-                   }
                 }
+                //  else {
+                //    Vector3Int border =  new Vector3Int(x, y, 0);
+
+                //    if(checkNeighbourAir(neighbours[Direction.North], border))
+                //    {
+                //         FaceDirection face = FaceDirection.Front;
+                //         AddFace(face, currentPos, chunkCoord, currentType);
+                //    }
+                // }
 
                 // Back Face z-
                 if(z > 0)
                 {
-                    if (chunkBlocks[x, y, z - 1] == BlockType.Air)
+                    if (blocks[x, y, z - 1] == BlockType.Air)
                     {
                         FaceDirection face = FaceDirection.Back;
                         AddFace(face, currentPos, chunkCoord, currentType);
                     }
-                } else {
-                   Vector3Int border =  new Vector3Int(x, y, chunkWidth - 1);
-                   
-                   if(checkNeighbourAir(neighbours[Direction.South], border))
-                   {
-                        FaceDirection face = FaceDirection.Back;
-                        AddFace(face, currentPos, chunkCoord, currentType);
-                   }
                 }
+                //  else {
+                //    Vector3Int border =  new Vector3Int(x, y, chunkWidth - 1);
+                   
+                //    if(checkNeighbourAir(neighbours[Direction.South], border))
+                //    {
+                //         FaceDirection face = FaceDirection.Back;
+                //         AddFace(face, currentPos, chunkCoord, currentType);
+                //    }
+                // }
             }
         }
-
-        // Draw Mesh
-        mesh.Clear();
-        mesh.vertices = vertices.ToArray();
-        mesh.triangles = triangles.ToArray();
-        mesh.uv = uvs.ToArray();
-
-        mesh.RecalculateNormals();
-        // mesh.RecalculateTangents();
-        // mesh.RecalculateBounds();
-
-        GetComponent<MeshCollider>().sharedMesh = mesh;
-        GetComponent<MeshFilter>().mesh = mesh;
     }
 
-    public void DrawMesh()
+    public void DrawMesh(MeshData meshData)
     {
         Mesh mesh = new Mesh();
 
-        mesh.vertices = vertices.ToArray();
-        mesh.triangles = triangles.ToArray();
-        mesh.uv = uvs.ToArray();
+        mesh.vertices = meshData.vertices.ToArray();
+        mesh.triangles = meshData.triangles.ToArray();
+        mesh.uv = meshData.uvs.ToArray();
 
         mesh.RecalculateNormals();
         // mesh.RecalculateTangents();

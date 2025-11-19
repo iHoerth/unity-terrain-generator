@@ -1,7 +1,3 @@
-using System.Collections;
-using System.Collections.Generic;
-using UnityEngine;
-
 public enum BlockType
 {
     Air,
@@ -10,3 +6,14 @@ public enum BlockType
     Stone,
     Water
 }
+
+public enum TileType
+{
+    Grass,
+    GrassSide,
+    Dirt,
+    Stone,
+    Leaves,
+    Water
+}
+
