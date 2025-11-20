@@ -7,8 +7,8 @@ public class PlayerLook : MonoBehaviour
 
     // Input variables
     private float xRotation = 0f;
-    public float xSensitivity = 30f;
-    public float ySensitivity = 30f;
+    public float xSensitivity = 3f;
+    public float ySensitivity = 3f;
 
     // hit Getter
     public RaycastHit CurrentHit => hit;
@@ -26,14 +26,14 @@ public class PlayerLook : MonoBehaviour
         float maxRotationX = 90;
 
         // calculate camera rotation for looking up and down
-        xRotation -= (mouseY * Time.deltaTime) * ySensitivity;
+        xRotation -= mouseY * ySensitivity;
         xRotation = Mathf.Clamp(xRotation, -maxRotationX, maxRotationX);
 
         //apply to our cam transform
         cam.transform.localRotation = Quaternion.Euler(xRotation, 0, 0);
 
         //rotate our player
-        transform.Rotate(Vector3.up * (mouseX * Time.deltaTime) * xSensitivity);
+        transform.Rotate(Vector3.up * mouseX * xSensitivity);
     }
 
     public void Aim()

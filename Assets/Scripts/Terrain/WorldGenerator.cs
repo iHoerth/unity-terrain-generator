@@ -59,7 +59,7 @@ public class WorldGenerator : MonoBehaviour
     public int innerRadius = 7;
     public int outerRadius = 8;
     public TerrainChunk chunkPrefab;
-    public Vector2Int chunkCoord = new Vector2Int(0,0);
+    public Vector2Int currentPos = new Vector2Int(0,0);
     public Dictionary<Vector2Int, BlockType[,,]> WorldData = new Dictionary<Vector2Int, BlockType[,,]>();
     public Dictionary<Vector2Int, TerrainChunk> activeChunks = new Dictionary<Vector2Int, TerrainChunk>();
     public Queue<TerrainChunk> inactiveChunks = new Queue<TerrainChunk>();
@@ -86,7 +86,7 @@ public class WorldGenerator : MonoBehaviour
     void Start()
     {
         int logicalCores = Environment.ProcessorCount;
-        int workerCount = Mathf.Max(1, logicalCores - 2);
+        int workerCount = Mathf.Max(1, logicalCores - 1);
 
         FastNoise noise = new FastNoise();
         (float minNoise, float maxNoise) = NoiseSampler.SampleNoiseRange(
@@ -125,24 +125,35 @@ public class WorldGenerator : MonoBehaviour
     }
 
     public IEnumerator DrawChunkDelay()
-    {
+    {   
+        int budget = 1;
+
         while(true)
         {   
-            ChunkResult jobResult = null;
-            
-            lock(resultLock)
-            {   
-                if(resultQueue.Count > 0)
-                    jobResult = resultQueue.Dequeue(); 
-            }
+            int drawThisFrame = 0;
 
-            if(jobResult != null)
+            while(drawThisFrame < budget)
             {
-                if(activeChunks.TryGetValue(jobResult.coord, out TerrainChunk chunk))
-                {
-                    chunk.blocks = jobResult.blocks;
-                    chunk.DrawMesh(jobResult.mesh);
+                ChunkResult jobResult = null;
+                
+                lock(resultLock)
+                {   
+                    if(resultQueue.Count > 0)
+                        jobResult = resultQueue.Dequeue(); 
                 }
+
+                if(jobResult != null)
+                {
+                    if(activeChunks.TryGetValue(jobResult.coord, out TerrainChunk chunk))
+                    {
+                        chunk.blocks = jobResult.blocks;
+                        // aca podria tener un getter chunk.populated = true 
+                        // y capaz la f
+                        chunk.DrawMesh(jobResult.mesh);
+                    }
+                }
+
+                drawThisFrame++;
             }
 
             yield return null;
@@ -163,48 +174,44 @@ public class WorldGenerator : MonoBehaviour
         // Check if existing activeChunks are outside of correct radius and add to "toRemove" list
         foreach (Vector2Int pos in activeChunks.Keys.ToList())
         {   
-            // Four possible scenarios
-            bool a = pos.x < (playerChunkPos.x - outerRadius);
-            bool b = pos.x > (playerChunkPos.x + outerRadius);
-            bool c = pos.y < (playerChunkPos.y - outerRadius);
-            bool d = pos.y > (playerChunkPos.y + outerRadius);
+            int proyX = pos.x - playerCurrentChunkPos.x;
+            int proyZ =  pos.y - playerCurrentChunkPos.y;
+            float distSq = proyX * proyX + proyZ * proyZ;
 
-            // bool a2 = true;
-            if(a || b || c || d)
+            if(distSq > outerRadius*outerRadius)
             {
                 activeChunks[pos].gameObject.SetActive(false);
                 inactiveChunks.Enqueue(activeChunks[pos]);
                 activeChunks.Remove(pos);
             }
         }
+
         StartCoroutine(GenerateChunksDelay());
-
-        // var swCreateJobs = Stopwatch.StartNew();
-        // Itarate through all chunks in radius
-
-            // StartCoroutine(DrawChunkDelay());
-        // swCreateJobs.Stop();
-        // swTotal.Stop();
-        // UnityEngine.Debug.Log(
-        //     $"GenerateWorld: total={swTotal.ElapsedMilliseconds} ms | " +
-        //     $"scan/remove={swScanRemove.ElapsedMilliseconds} ms | " +
-        //     $"deactivate={swDeactivate.ElapsedMilliseconds} ms | " +
-        //     $"create+jobs={swCreateJobs.ElapsedMilliseconds} ms"
-        // );
     }
 
     IEnumerator GenerateChunksDelay()
     {
         int createdThisFrame = 0;
         int budget = 1; 
-        
+
+
+        // Lista o Array de Targets
+        // desde playerPosition hasta playerPosition + radius? O.o
         for(int x = playerCurrentChunkPos.x - outerRadius; x <= playerCurrentChunkPos.x + outerRadius; x++)
         for(int z = playerCurrentChunkPos.y - outerRadius; z <= playerCurrentChunkPos.y + outerRadius; z++)
         {   
-            chunkCoord = new Vector2Int(x, z);
+            currentPos = new Vector2Int(x, z);
+            int proyX = currentPos.x - playerCurrentChunkPos.x;
+            int proyZ =  currentPos.y - playerCurrentChunkPos.y;
+            float distSq = proyX * proyX + proyZ * proyZ;
+            if(distSq > outerRadius * outerRadius)
+                continue;
 
+            // Agregar currentPos a targets
+            /// ordenar targets por distancia al player
+            /// target = 
             // If currently NOT in activeChunks dictionary, need to get one from pool (or create one if pool is empty)
-            if(!activeChunks.ContainsKey(chunkCoord))
+            if(!activeChunks.ContainsKey(currentPos))
             {   
                 // New empty chunk
                 TerrainChunk newChunk;
@@ -224,18 +231,12 @@ public class WorldGenerator : MonoBehaviour
                 // Add to activeChunks dictionary, change name and populate + buildmesh
                 newChunk.name = $"Chunk_{x}_{z}";
 
-                activeChunks.Add(chunkCoord, newChunk);
-                newChunk.Init(chunkCoord, this, globalMinNoise, globalMaxNoise);
+                activeChunks.Add(currentPos, newChunk);
+                newChunk.Init(currentPos, this, globalMinNoise, globalMaxNoise);
 
                 lock(jobLock)
                 {
-                    // BlockType[,,] jobBlocks = new BlockType[
-                    // TerrainChunk.chunkWidth,
-                    // TerrainChunk.chunkHeight,
-                    // TerrainChunk.chunkWidth
-                    // ];
-
-                    ChunkJob job = new ChunkJob(chunkCoord, newChunk.blocks);
+                    ChunkJob job = new ChunkJob(currentPos, newChunk.blocks);
 
                     jobQueue.Enqueue(job);
                     Monitor.Pulse(jobLock);
@@ -243,11 +244,10 @@ public class WorldGenerator : MonoBehaviour
 
                 createdThisFrame++;
 
-                // si ya hicimos varios en este frame, pausamos hasta el siguiente
                 if (createdThisFrame >= budget)
                 {
                     createdThisFrame = 0;
-                    yield return null; // seguir en el próximo frame
+                    yield return null; 
                 }
             }
         }
@@ -285,6 +285,9 @@ public class WorldGenerator : MonoBehaviour
             );
 
             chunkData.PopulateChunkData();
+
+            
+
             MeshData meshData = chunkData.GenerateMeshData();
 
             ChunkResult result = new ChunkResult(

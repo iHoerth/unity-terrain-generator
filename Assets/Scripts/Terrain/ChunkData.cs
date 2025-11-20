@@ -80,7 +80,7 @@
 
                 float normalizedHeight = Mathf.InverseLerp(world.globalMinNoise, world.globalMaxNoise, noiseHeight);
                 // float normalizedHeight = (noiseHeight + 1) / 2f;
-                normalizedHeight = world.meshHeightCurve.Evaluate(normalizedHeight);
+                // normalizedHeight = world.meshHeightCurve.Evaluate(normalizedHeight);
 
                 float groundHeight = Mathf.Lerp(40, 115, normalizedHeight);
                 groundHeight = Mathf.FloorToInt(groundHeight);

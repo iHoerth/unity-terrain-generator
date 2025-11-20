@@ -16,34 +16,22 @@ public class TerrainChunk : MonoBehaviour
     public const int chunkWidth = 16;
     public Vector2Int chunkCoord;
     public WorldGenerator world;
-
     public Dictionary<Direction, Vector2Int> neighbours = new();
-    public Dictionary<Vector3Int, BlockType> blockData = new();
 
-    FastNoise noise = new FastNoise();
-
-    public float maxNoiseValue;
+    // Noise Variables
     public float minNoiseValue;
+    public float maxNoiseValue;   
 
     // Mesh variables
-    List<Vector3> vertices =  new List<Vector3>();
-    List<Vector2> uvs = new List<Vector2>();
-    List<int> triangles = new List<int>();
+    MeshFilter meshFilter;
+    MeshCollider meshCollider;
+    Mesh mesh;
 
-    // Chunkdata Array
+    // Chunkdata Variables
     public BlockType[,,] blocks = new BlockType[chunkWidth, chunkHeight, chunkWidth];
+    public Dictionary<Vector3Int, BlockType> blockData = new();
 
-    public static Dictionary<FaceDirection, Vector3[]> FaceVertexMap = new Dictionary<FaceDirection, Vector3[]>()
-    {
-       {FaceDirection.Top, new Vector3[]{new Vector3(0,1,0), new Vector3(0,1,1), new Vector3(1,1,1), new Vector3(1,1,0)}},
-       {FaceDirection.Bottom, new Vector3[]{new Vector3(0,0,1), new Vector3(0,0,0), new Vector3(1,0,0), new Vector3(1,0,1)}},
-       {FaceDirection.Right, new Vector3[]{new Vector3(1,0,0), new Vector3(1,1,0), new Vector3(1,1,1), new Vector3(1,0,1)}},
-       {FaceDirection.Left, new Vector3[]{new Vector3(0,0,1), new Vector3(0,1,1), new Vector3(0,1,0), new Vector3(0,0,0)}},
-       {FaceDirection.Front, new Vector3[]{new Vector3(1,0,1), new Vector3(1,1,1), new Vector3(0,1,1), new Vector3(0,0,1)}},
-       {FaceDirection.Back,  new Vector3[]{new Vector3(0,0,0), new Vector3(0,1,0), new Vector3(1,1,0), new Vector3(1,0,0)}}
-    };
-
-    public void Start()
+    void Start()
     {
         // Iterates neighbour dictionary
         // foreach (Direction dir in neighbours.Keys)
@@ -57,12 +45,25 @@ public class TerrainChunk : MonoBehaviour
         // }
     }
 
+    void Awake()
+    {
+        meshFilter = GetComponent<MeshFilter>();
+        meshCollider = GetComponent<MeshCollider>();
+
+        mesh = new Mesh();
+        meshFilter.sharedMesh = mesh;
+        meshCollider.sharedMesh = mesh;
+    }
+    
     public void ClearData()
     {
+        // vertices.Clear();
+        // uvs.Clear();
+        // triangles.Clear();
+        // meshFilter.sharedMesh = null;
         neighbours.Clear();
-        vertices.Clear();
-        uvs.Clear();
-        triangles.Clear();
+        meshCollider.sharedMesh = null;
+        mesh.Clear();
         Array.Clear(blocks, 0, blocks.Length);
     }
     
@@ -82,75 +83,23 @@ public class TerrainChunk : MonoBehaviour
         neighbours.Add(Direction.South, new Vector2Int(chunkCoord.x, chunkCoord.y - 1));
      }
 
-    // Populates the chunkBlock 3D array with blocktypes
-    public void populateChunk()
-    {   
-        // Calculate the chunk offset 
-        int xOffset = chunkCoord.x * chunkWidth;
-        int zOffset = chunkCoord.y * chunkWidth;
+    public void DrawMesh(MeshData meshData)
+    {
+        // Mesh mesh = new Mesh();
+        mesh.Clear();
 
-        for(int x = 0; x < chunkWidth; x++)
-        for(int z = 0; z < chunkWidth; z++)
-        {
-            // Calculate global coords of the chunk
-            int xGlobal = x + xOffset;
-            int zGlobal = z + zOffset;
+        mesh.SetVertices(meshData.vertices);
+        mesh.SetTriangles(meshData.triangles, 0);
+        mesh.SetUVs(0, meshData.uvs);
+        mesh.RecalculateNormals();
 
-            float amp = world.amplitude;
-            float freq = world.frequency;
+        meshCollider.sharedMesh = mesh;
 
-            float noiseHeight = 0;
+        // mesh.RecalculateTangents();
+        // mesh.RecalculateBounds();
 
-            for(int i = 0; i < world.octaves; i++)
-            {
-
-                float noiseValue = (noise.GetSimplex(xGlobal / world.scale * freq, zGlobal / world.scale * freq));
-                noiseHeight += noiseValue * amp;
-
-                freq *= world.lacunarity;
-                amp *= world.persistance;
-            }
-
-            float normalizedHeight = Mathf.InverseLerp(minNoiseValue, maxNoiseValue, noiseHeight);
-            // float normalizedHeight = (noiseHeight + 1) / 2f;
-            normalizedHeight = world.meshHeightCurve.Evaluate(normalizedHeight);
-
-            float groundHeight = Mathf.Lerp(40, 115, normalizedHeight);
-            groundHeight = Mathf.FloorToInt(groundHeight);
-            // float groundHeight = Mathf.FloorToInt(TerrainChunk.chunkHeight * 1/2 + normalizedHeight);
-
-            for(int y = 0; y < chunkHeight; y++)
-            {   
-                int caveLevel = Mathf.FloorToInt(groundHeight) - 5;
-                float caveTreshold = 0.28f;
-
-                if(y == 0)
-                {
-                    blocks[x, y, z] = BlockType.Stone;
-                    continue;
-                }   
-                
-                // Assign block types depending on distance to the noise groundHeight
-                // Assign block types depending on distance to the noise groundHeight
-                if(y < caveLevel)
-                {
-                    float caveNoise = (noise.GetPerlinFractal(xGlobal * world.caveScaleW, y * world.caveScaleH, zGlobal * world.caveScaleW ));
-
-                    if (caveNoise > caveTreshold)
-                        blocks[x, y, z] = BlockType.Air;
-                    else
-                        blocks[x, y, z] = BlockType.Stone;   
-                }
-                else if (y <= groundHeight - 5)
-                    blocks[x, y, z] = BlockType.Stone;
-                else if(y < groundHeight)
-                    blocks[x, y, z] = BlockType.Dirt;
-                else if(y == groundHeight)
-                    blocks[x, y, z] = BlockType.Grass;
-                else
-                    blocks[x, y, z] = BlockType.Air;
-            }
-        }
+        GetComponent<MeshCollider>().sharedMesh = mesh;
+        GetComponent<MeshFilter>().mesh = mesh;  
     }
 
     // Checks if neighbour chunk has air in the border at that position
@@ -192,47 +141,6 @@ public class TerrainChunk : MonoBehaviour
         return true;
     }
 
-    public void AddFace(FaceDirection face, Vector3Int basePos, Vector2Int chunkCoord, BlockType currentBlockType)
-    {   
-        // Gets world offset to obtain global coords
-        int xOffset = chunkCoord.x * chunkWidth;
-        int zOffset = chunkCoord.y * chunkWidth; 
-
-        // Get current index count in the veritces lsit
-        int currentIndex = vertices.Count;
-
-        // Sum current vertex pos in chunk with face offset to obtain required vertices to draw current face
-        foreach (Vector3 vertexPosition in FaceVertexMap[face])
-            vertices.Add(basePos + vertexPosition + new Vector3(xOffset, 0, zOffset));
-
-        // Add indices - clockwise
-        triangles.Add(currentIndex); // v0
-        triangles.Add(currentIndex + 1); // v1
-        triangles.Add(currentIndex + 2); // v2
-        triangles.Add(currentIndex); // v0
-        triangles.Add(currentIndex + 2); // v2
-        triangles.Add(currentIndex + 3); // v3
-
-        // UVs
-        Block currentBlock = Block.blockData[currentBlockType];
-        Vector2[] faceUV;
-        
-        switch(face)
-        {
-            case FaceDirection.Top:
-                faceUV = currentBlock.topUV.GetUVs();
-                break;
-            case FaceDirection.Bottom:
-                faceUV = currentBlock.bottomUV.GetUVs();
-                break;
-            default:
-                faceUV = currentBlock.sideUV.GetUVs();
-                break;
-        } 
-
-        uvs.AddRange(faceUV);
-    }
-    
     public Vector3Int GlobalToLocal(Vector3Int globalPos)
     {
         Vector3Int localPos = new Vector3Int();
@@ -255,114 +163,5 @@ public class TerrainChunk : MonoBehaviour
             blocks[localPos.x, localPos.y , localPos.z] = newType;
     }
 
-    public void GenerateMeshData()
-    {   
-        vertices.Clear();
-        triangles.Clear();
-        uvs.Clear();
 
-        // Create Vertices, UVs & Triangles
-        for(int x = 0; x < chunkWidth; x++)
-        for(int z = 0; z < chunkWidth; z++)
-        for(int y = 0; y < chunkHeight; y++)
-        {   
-            BlockType currentType = blocks[x, y, z];
-            Vector3Int currentPos = new Vector3Int(x, y, z);
-
-            if(currentType != BlockType.Air)
-            {
-                // Top face y+
-                if(y == chunkHeight - 1 || blocks[x, y + 1, z] == BlockType.Air)
-                    AddFace(FaceDirection.Top, currentPos, chunkCoord, currentType);
-
-                // Bottom Face y-
-                if(y > 0 && blocks[x, y - 1, z] == BlockType.Air)
-                    AddFace(FaceDirection.Bottom, currentPos, chunkCoord, currentType);
-
-                // Right Face x+
-                // Checks if current x is in the border or somewhere in the middle
-                if(x < chunkWidth - 1)
-                {
-                    if(blocks[x + 1, y, z] == BlockType.Air)
-                        AddFace(FaceDirection.Right, currentPos, chunkCoord, currentType);
-                } 
-                // else {
-                // // Current X in the limit, so need to check for neighbour blocktype
-                //    Vector3Int border =  new Vector3Int(0, y, z);
-                //    if(checkNeighbourAir(neighbours[Direction.East], border))
-                //         AddFace(FaceDirection.Right, currentPos, chunkCoord, currentType);
-                // }
-
-                // Left Face x-
-                if(x > 0)
-                {
-                    if (blocks[x - 1, y, z] == BlockType.Air)
-                        AddFace(FaceDirection.Left, currentPos, chunkCoord, currentType);
-                } 
-                // else {
-                //    Vector3Int border =  new Vector3Int(chunkWidth - 1, y, z);
-                   
-                //    if(checkNeighbourAir(neighbours[Direction.West], border))
-                //    {
-                //         FaceDirection face = FaceDirection.Left;
-                //         AddFace(face, currentPos, chunkCoord, currentType);
-                //    }
-                // }
-
-                // Front Face z+
-                if(z < chunkWidth - 1)
-                {
-                    if(blocks[x, y, z + 1] == BlockType.Air)
-                    {
-                        FaceDirection face = FaceDirection.Front;
-                        AddFace(face, currentPos, chunkCoord, currentType);
-                    }
-                }
-                //  else {
-                //    Vector3Int border =  new Vector3Int(x, y, 0);
-
-                //    if(checkNeighbourAir(neighbours[Direction.North], border))
-                //    {
-                //         FaceDirection face = FaceDirection.Front;
-                //         AddFace(face, currentPos, chunkCoord, currentType);
-                //    }
-                // }
-
-                // Back Face z-
-                if(z > 0)
-                {
-                    if (blocks[x, y, z - 1] == BlockType.Air)
-                    {
-                        FaceDirection face = FaceDirection.Back;
-                        AddFace(face, currentPos, chunkCoord, currentType);
-                    }
-                }
-                //  else {
-                //    Vector3Int border =  new Vector3Int(x, y, chunkWidth - 1);
-                   
-                //    if(checkNeighbourAir(neighbours[Direction.South], border))
-                //    {
-                //         FaceDirection face = FaceDirection.Back;
-                //         AddFace(face, currentPos, chunkCoord, currentType);
-                //    }
-                // }
-            }
-        }
-    }
-
-    public void DrawMesh(MeshData meshData)
-    {
-        Mesh mesh = new Mesh();
-
-        mesh.vertices = meshData.vertices.ToArray();
-        mesh.triangles = meshData.triangles.ToArray();
-        mesh.uv = meshData.uvs.ToArray();
-
-        mesh.RecalculateNormals();
-        // mesh.RecalculateTangents();
-        // mesh.RecalculateBounds();
-
-        GetComponent<MeshCollider>().sharedMesh = mesh;
-        GetComponent<MeshFilter>().mesh = mesh;  
-    }
 }
