@@ -151,11 +151,11 @@
                         if(blocks[x + 1, y, z] == BlockType.Air)
                             AddFace(FaceDirection.Right, currentPos, chunkCoord, currentType);
                     }
-                    // else
-                    // {
-                    //     if(checkNeighbourAir(neighbours[Direction.East], new Vector3Int(0, y, z)))
-                    //         AddFace(FaceDirection.Right, currentPos, chunkCoord, currentType);
-                    // }
+                    else
+                    {
+                        // if(checkNeighbourAir(neighbours[Direction.East], new Vector3Int(0, y, z)))
+                            AddFace(FaceDirection.Right, currentPos, chunkCoord, currentType);
+                    }
 
                     // Left Face x-
                     if(x > 0)
@@ -163,11 +163,11 @@
                         if (blocks[x - 1, y, z] == BlockType.Air)
                             AddFace(FaceDirection.Left, currentPos, chunkCoord, currentType);
                     }
-                    // else
-                    // {
+                    else
+                    {
                     // if(checkNeighbourAir(neighbours[Direction.West], new Vector3Int(chunkWidth - 1, y, z)))
-                    //         AddFace(FaceDirection.Left, currentPos, chunkCoord, currentType);
-                    // }
+                            AddFace(FaceDirection.Left, currentPos, chunkCoord, currentType);
+                    }
 
                     // Front Face z+
                     if(z < chunkWidth - 1)
@@ -175,11 +175,11 @@
                         if(blocks[x, y, z + 1] == BlockType.Air)
                             AddFace(FaceDirection.Front, currentPos, chunkCoord, currentType);
                     }
-                    // else
-                    // {
+                    else
+                    {
                     // if(checkNeighbourAir(neighbours[Direction.North], new Vector3Int(x, y, 0)))
-                    //         AddFace(FaceDirection.Front, currentPos, chunkCoord, currentType);
-                    // }
+                            AddFace(FaceDirection.Front, currentPos, chunkCoord, currentType);
+                    }
 
                     // Back Face z-
                     if(z > 0)
@@ -187,11 +187,11 @@
                         if (blocks[x, y, z - 1] == BlockType.Air)
                             AddFace(FaceDirection.Back, currentPos, chunkCoord, currentType);
                     }
-                    // else
-                    // {
+                    else
+                    {
                     // if(checkNeighbourAir(neighbours[Direction.South], new Vector3Int(x, y, chunkWidth - 1)))
-                    //         AddFace(FaceDirection.Back, currentPos, chunkCoord, currentType);
-                    // }
+                            AddFace(FaceDirection.Back, currentPos, chunkCoord, currentType);
+                    }
                 }
             }
 
