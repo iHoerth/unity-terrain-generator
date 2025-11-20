@@ -8,6 +8,7 @@ public class InputManager : MonoBehaviour
     // Start is called once before the first execution of Update after the MonoBehaviour is created
     private PlayerMotor motor;
     private PlayerLook look;
+    public WorldGenerator world;
 
     void Awake()
     {
@@ -25,12 +26,15 @@ public class InputManager : MonoBehaviour
         playerActions.Sprint.performed += ctx => motor.Sprint();
         playerActions.Attack.performed += ctx => look.Attack();
         playerActions.Build.performed += ctx => look.Build();
+
+        world = GameObject.FindGameObjectWithTag("World").GetComponent<WorldGenerator>();
     }
 
     // Update is called once per frame/
 
     void Update()
     {
+        if(world.loading) return;
         motor.ProcessMove(playerActions.Move.ReadValue<Vector2>());
         look.ProcessLook(playerActions.Look.ReadValue<Vector2>());
         look.Aim();

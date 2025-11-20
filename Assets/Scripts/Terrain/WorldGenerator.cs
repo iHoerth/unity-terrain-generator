@@ -71,9 +71,16 @@ public class WorldGenerator : MonoBehaviour
     readonly object jobLock = new object();
     readonly object resultLock = new object();
     bool workersRunning = true;
+    public bool loading = true;
+    public int totalActiveChunks = 0;
+    public int possibleActiveChunks = 0;
+
 
     void Awake()
     {
+        possibleActiveChunks = Mathf.FloorToInt(Mathf.PI * outerRadius * outerRadius) - 1;
+        StartCoroutine(CountChunks());
+
         Vector2Int playerChunkPos = new Vector2Int(
             Mathf.FloorToInt(playerController.transform.position.x / 16),
             Mathf.FloorToInt(playerController.transform.position.z / 16)
@@ -121,6 +128,23 @@ public class WorldGenerator : MonoBehaviour
         {
             playerLastChunkPos = playerCurrentChunkPos;
             GenerateWorld(false);   
+        }
+        //
+    }
+
+    IEnumerator CountChunks()
+    {
+        while(loading)
+        {
+            totalActiveChunks = activeChunks.Count;
+            // UnityEngine.Debug.Log("LOADING: " + totalActiveChunks * 100/possibleActiveChunks + " %");
+            if(totalActiveChunks == possibleActiveChunks)
+            {
+                loading = false;
+                // UnityEngine.Debug.Log("LOADING COMPLETE!");
+            }
+
+            yield return null;
         }
     }
 

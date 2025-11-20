@@ -43,13 +43,6 @@ public class PlayerLook : MonoBehaviour
         float maxDistance = 3f;
 
         Physics.Raycast(origin, direction, out hit, maxDistance);
-        // if(Physics.Raycast(origin, direction, out hit, maxDistance))
-        // {
-        //     Debug.DrawRay(origin, direction, Color.red);
-        // }
-        // else {
-        //     Debug.DrawRay(origin, direction, Color.green);
-        // }
     }
 
     public void Attack()
@@ -83,7 +76,6 @@ public class PlayerLook : MonoBehaviour
                     }
                 }
             }
-
         }
     }
 
@@ -121,13 +113,6 @@ public class PlayerLook : MonoBehaviour
                 ChunkData chunkData = new ChunkData(neighbourChunk.chunkCoord, neighbourChunk.blocks, neighbourChunk.world);
                 MeshData mesh = chunkData.GenerateMeshData();
                 neighbourChunk.DrawMesh(mesh);
-
-                // Rebuild neighbour to avoid duplicate in-faces.
-                
-                // Esto es necesario? De ultima q se regenere solo cuando construya ahi o cuando me aleje
-                // // debe ser mas caro esto q las caras duplicadas
-                // chunk.GenerateMeshData(); 
-                // chunk.DrawMesh(); 
             }
         }
     }
