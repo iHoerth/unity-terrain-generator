@@ -17,6 +17,7 @@ public class TerrainChunk : MonoBehaviour
     public Vector2Int chunkCoord;
     public WorldGenerator world;
     public Dictionary<Direction, Vector2Int> neighbours = new();
+    public bool isPopulated = false;
 
     // Noise Variables
     public float minNoiseValue;

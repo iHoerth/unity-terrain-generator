@@ -24,21 +24,59 @@ public class PlayerMotor : MonoBehaviour
     private float crouchTimer;
     private bool crouching = false;
     private bool lerpCrouch = false; 
-    // lerp = linear interpolation. Unity tiene una built-in function Mathf.Lerp(A,B,t).
-    // en general Lerp(A,B,t)= A + (B−A)∗t de manera que si t es 0, lerp devuelve A, si t 1, lerp devuelve B y si t 0,5 devuelve el punto medio.
-    // En el caso anterior el comportamiento seria completamente lineal. Otra cosa q se hace es un ease-out, t *= t de esta manera el comportamiento es cuadratico.
-    // En MC en realidad el crouch es sin lerp, pero voy a implementarlo para aprender.
+    private bool spawned = false;
 
-    void Start()
+    public WorldGenerator world;
+
+    void Awake()
     {
         controller = GetComponent<CharacterController>();
         standHeight = controller.height;
         crouchHeight = standHeight * crouchRatio;
     }
 
+    void HandleSpawn()
+    {
+        Vector2Int chunkPos = new Vector2Int(
+            Mathf.FloorToInt(transform.position.x/16),
+            Mathf.FloorToInt(transform.position.z/16)
+        );
+        Debug.Log(chunkPos + " CHUNKPOS");
+
+        Vector3Int playerPosInt = new Vector3Int(
+            Mathf.FloorToInt(transform.position.x),
+            Mathf.FloorToInt(transform.position.y),
+            Mathf.FloorToInt(transform.position.z)
+        );
+        Debug.Log(playerPosInt + " PlayerPOsInt");
+
+        if((world.activeChunks.TryGetValue(chunkPos, out TerrainChunk currentChunk)))
+        {
+            Vector3Int chunklocalPos = currentChunk.GlobalToLocal(playerPosInt);
+
+            int spawnHeight = TerrainChunk.chunkHeight;
+
+            
+            for(int y = TerrainChunk.chunkHeight; y >= 0; y--)
+            {
+                if(currentChunk.blocks[chunklocalPos.x, y - 1, chunklocalPos.z] != BlockType.Air)
+                {
+                    spawnHeight = y - 1;
+                    break;
+                }
+            }
+            controller.enabled = false;
+            transform.position = new Vector3(transform.position.x, spawnHeight + 0.1f, transform.position.z);
+            controller.enabled = true;
+        }
+
+        spawned = true;
+    }
+
     // Update is called once per frame
     void Update()
     {
+        if(!world.loading && !spawned) HandleSpawn();
         isGrounded = controller.isGrounded;
 
         if(lerpCrouch)
@@ -61,6 +99,7 @@ public class PlayerMotor : MonoBehaviour
     // Receive inputs from input manage and apply to charac contr
     public void ProcessMove(Vector2 input)
     {
+        if(!spawned) return;
         Vector3 moveDirection = Vector3.zero;
         moveDirection.x = input.x;
         moveDirection.z = input.y;

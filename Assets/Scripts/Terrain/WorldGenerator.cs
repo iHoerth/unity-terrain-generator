@@ -170,6 +170,7 @@ public class WorldGenerator : MonoBehaviour
                 {
                     if(activeChunks.TryGetValue(jobResult.coord, out TerrainChunk chunk))
                     {
+                        chunk.isPopulated = true;
                         chunk.blocks = jobResult.blocks;
                         // aca podria tener un getter chunk.populated = true 
                         // y capaz la f

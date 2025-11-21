@@ -8,6 +8,7 @@ public class InputManager : MonoBehaviour
     // Start is called once before the first execution of Update after the MonoBehaviour is created
     private PlayerMotor motor;
     private PlayerLook look;
+    [SerializeField] private InventoryManager inventory;
     public WorldGenerator world;
 
     void Awake()
@@ -26,6 +27,8 @@ public class InputManager : MonoBehaviour
         playerActions.Sprint.performed += ctx => motor.Sprint();
         playerActions.Attack.performed += ctx => look.Attack();
         playerActions.Build.performed += ctx => look.Build();
+
+        playerActions.Inventory.performed += ctx => inventory.ToggleInventory();
 
         world = GameObject.FindGameObjectWithTag("World").GetComponent<WorldGenerator>();
     }
