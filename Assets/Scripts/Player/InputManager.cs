@@ -38,6 +38,8 @@ public class InputManager : MonoBehaviour
     void Update()
     {
         if(world.loading) return;
+        if(inventory.inventoryOpened) return;
+
         motor.ProcessMove(playerActions.Move.ReadValue<Vector2>());
         look.ProcessLook(playerActions.Look.ReadValue<Vector2>());
         look.Aim();

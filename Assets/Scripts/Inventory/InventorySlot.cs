@@ -7,6 +7,7 @@ public class InventorySlot : MonoBehaviour, IDropHandler
 {
     public void OnDrop(PointerEventData eventData)
     {
+        Debug.Log(transform.childCount);
         if(transform.childCount == 0)
         {
             // Obtengo el objeto drageado, q si o si es de tipo InventoryItem en este caso
@@ -14,5 +15,5 @@ public class InventorySlot : MonoBehaviour, IDropHandler
             // invItem.SetParent(transform);
             invItem.parentAfterDrag = transform;
         }
-    }    
+    }
 }
