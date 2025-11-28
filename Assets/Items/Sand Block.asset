@@ -16,5 +16,6 @@ MonoBehaviour:
   type: 0
   actionType: 0
   range: {x: 5, y: 4}
+  maxQuantity: 64
   stackable: 1
   sprite: {fileID: 21300000, guid: adf85045314924d4a983d9ea30320d7d, type: 3}

@@ -1,12 +1,14 @@
 using UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.EventSystems;
+using TMPro;
 
 public class InventoryItem : MonoBehaviour, IBeginDragHandler, IDragHandler, IEndDragHandler
 {
     [Header("UI")]
     public Image itemImage;
     public Item item;
+    public TMP_Text quantityText;
     private CanvasGroup canvasGroup;
     [HideInInspector] public Transform parentAfterDrag;
     [HideInInspector] public int quantity;
@@ -14,19 +16,22 @@ public class InventoryItem : MonoBehaviour, IBeginDragHandler, IDragHandler, IEn
     void Awake()
     {
         canvasGroup = GetComponent<CanvasGroup>();
-    }
-
-    void Start()
-    {
-        if (item != null)
-            UpdateItem(item, quantity);
+        itemImage = GetComponent<Image>();
+        quantityText = GetComponentInChildren<TMP_Text>();
     }
 
     public void UpdateItem(Item newItem, int quantity = 1)
     {   
         this.quantity = quantity;
         this.item = newItem;
-        this.itemImage.sprite = newItem.sprite;
+
+        if (newItem != null)
+            itemImage.sprite = newItem.sprite;
+
+        if(this.quantity == 1)
+            this.quantityText.text = "".ToString();
+        else 
+            this.quantityText.text = quantity.ToString();
     }
 
     public void OnBeginDrag(PointerEventData eventData)

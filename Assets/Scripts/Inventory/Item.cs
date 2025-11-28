@@ -9,6 +9,7 @@ public class Item : ScriptableObject
     public ItemType type;
     public ActionType actionType;
     public Vector2Int range = new Vector2Int(5, 4);
+    public int maxQuantity;
 
     [Header("UI")]
     public bool stackable = true;
@@ -16,7 +17,7 @@ public class Item : ScriptableObject
     
     public enum ItemType
     {
-        BuildingBlock,
+        Block,
         Tool
     }
 
@@ -25,4 +26,5 @@ public class Item : ScriptableObject
         Dig,
         Mine
     }
+
 }

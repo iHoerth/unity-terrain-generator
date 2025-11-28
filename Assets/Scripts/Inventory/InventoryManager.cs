@@ -6,20 +6,26 @@ using TMPro;
 public class InventoryManager : MonoBehaviour
 {
     public GameObject invGroup;
+    public GameObject toolBar;
+    public GameObject inventoryItemPrefab;
+
+    [HideInInspector] 
+    public InventorySlot[] inventorySlots;
+
     public Image crosshair;
     public Button darkBgToggle;
     public Button invBtn;
 
-    [HideInInspector] 
-    public InventorySlot[] inventorySlots;
 
     public bool inventoryOpened = false;
 
     void Awake()
     {
-        inventorySlots = invGroup.GetComponentsInChildren<InventorySlot>(true);
+        // InventoryManager ref
+        Transform invManager = invGroup.transform.parent;
 
-        Debug.Log(inventorySlots[0]);
+        // Busca TODOS los InventorySlot que cuelgan de InventoryManager
+        inventorySlots = invManager.GetComponentsInChildren<InventorySlot>(true);
 
         invBtn.onClick.AddListener(ToggleInventory);
         darkBgToggle.onClick.AddListener(ToggleInventory);
@@ -34,25 +40,59 @@ public class InventoryManager : MonoBehaviour
         invBtn.gameObject.SetActive(!inventoryOpened);
     }   
 
-    public void AddItem(Item item, int quantity = 1)
+    public void AddItem(Item newItem, int quantity = 1)
     {
+        InventorySlot firstEmptySlot = null;
+        InventoryItem sameItem = null;
+
         foreach(InventorySlot slot in inventorySlots)
         {
-            InventoryItem itemInSlot = slot.GetComponentsInChildren<InventoryItem>()[0];
-            // Si no tiene hijo, esto va a devolver null, entonces
-            if(itemInSlot == null)
+            InventoryItem itemInSlot = slot.GetComponentInChildren<InventoryItem>();
+
+            // Find first empty slot and save reference
+            if(firstEmptySlot == null && itemInSlot == null) 
             {
-                itemInSlot.UpdateItem(item, quantity);
-                return;
-            }
-            else if(itemInSlot.item.type == item.type && item.stackable)
-            {
-                // esto esta mas o menos XD
-                itemInSlot.UpdateItem(item, quantity);
+                firstEmptySlot = slot;
+                continue;
             }
 
-            itemInSlot.transform.SetParent(slot.transform); 
+            if(itemInSlot != null && itemInSlot.item == newItem)
+            {
+                sameItem = itemInSlot;
+            }
+
         }
+
+        if(newItem.stackable && sameItem != null)
+        {
+            // sameItem.quantity += quantity;
+            sameItem.UpdateItem(newItem, sameItem.quantity + quantity);
+            // Debug.Log(sameItem.quantity);
+        }
+
+        else
+        {
+            if(firstEmptySlot != null)
+            {
+                CreateItem(newItem, firstEmptySlot, quantity);
+            }
+
+            else Debug.Log("Inventory is Full");
+        }
+        // if i am here means it could not be stacked
     }
 
+    public void CreateItem(Item item, InventorySlot slot, int quantity = 1)
+    {
+        Debug.Log($"CreateItem: {item?.name} en slot {slot.name}");
+
+        GameObject newItemGameObject = Instantiate(inventoryItemPrefab, slot.transform);
+        InventoryItem inventoryItem = newItemGameObject.GetComponent<InventoryItem>();
+        inventoryItem.UpdateItem(item, quantity);
+    }
+
+    public void RemoveItem(Item item, InventorySlot slot)
+    {
+        
+    }
 }
