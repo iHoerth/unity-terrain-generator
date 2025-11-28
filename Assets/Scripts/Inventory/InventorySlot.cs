@@ -7,13 +7,20 @@ public class InventorySlot : MonoBehaviour, IDropHandler
 {
     public void OnDrop(PointerEventData eventData)
     {
-        Debug.Log(transform.childCount);
+        // Obtengo el objeto drageado, q si o si es de tipo InventoryItem en este caso
+        InventoryItem draggedItem = eventData.pointerDrag.GetComponent<InventoryItem>();
+
         if(transform.childCount == 0)
         {
-            // Obtengo el objeto drageado, q si o si es de tipo InventoryItem en este caso
-            InventoryItem invItem = eventData.pointerDrag.GetComponent<InventoryItem>();
-            // invItem.SetParent(transform);
-            invItem.parentAfterDrag = transform;
+            draggedItem.parentAfterDrag = transform;
+        }
+
+        else
+        {
+            InventoryItem itemInSlot = GetComponentInChildren<InventoryItem>();
+            itemInSlot.transform.SetParent(draggedItem.originalParent);
+
+            draggedItem.parentAfterDrag = transform;
         }
     }
 }

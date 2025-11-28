@@ -11,6 +11,7 @@ public class InventoryItem : MonoBehaviour, IBeginDragHandler, IDragHandler, IEn
     public TMP_Text quantityText;
     private CanvasGroup canvasGroup;
     [HideInInspector] public Transform parentAfterDrag;
+    [HideInInspector] public Transform originalParent;
     [HideInInspector] public int quantity;
     
     void Awake()
@@ -36,6 +37,7 @@ public class InventoryItem : MonoBehaviour, IBeginDragHandler, IDragHandler, IEn
 
     public void OnBeginDrag(PointerEventData eventData)
     {
+        originalParent = transform.parent;
         parentAfterDrag = transform.parent;
         transform.SetParent(transform.root);
 
